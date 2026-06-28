@@ -1,3 +1,11 @@
+---
+title: Project Brief
+type: Brief
+status: Draft
+author: Ethan Hollins
+date: 2026-06-28
+---
+
 # Project Brief
 
 ## Overview

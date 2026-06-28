@@ -1,3 +1,11 @@
+---
+title: Onboarding Guide
+type: Guide
+status: Draft
+author: Ethan Hollins
+date: 2026-06-28
+---
+
 # Onboarding Guide
 
 Welcome to the Tymraft team! This guide will help you get set up.

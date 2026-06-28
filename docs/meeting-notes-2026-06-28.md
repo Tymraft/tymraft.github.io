@@ -1,3 +1,11 @@
+---
+title: Meeting Notes — 28 June 2026
+type: Meeting Notes
+status: Final
+author: Ethan Hollins
+date: 2026-06-28
+---
+
 # Meeting Notes — 28 June 2026
 
 ## Attendees

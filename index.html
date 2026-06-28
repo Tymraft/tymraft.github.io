@@ -156,8 +156,21 @@
     .file-icon.xls    { background: #D1FAE5; color: var(--green); }
     .file-icon.misc   { background: var(--surface2); color: var(--muted); }
 
+    .file-name-wrap { display: flex; align-items: center; gap: 8px; }
     .file-name { font-weight: 500; font-size: 13px; color: var(--text); }
     tr:hover .file-name { color: var(--accent); }
+
+    /* Type badges */
+    .type-badge {
+      font-size: 10px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 2px 7px;
+      border-radius: 4px;
+      white-space: nowrap;
+      letter-spacing: 0.03em;
+      flex-shrink: 0;
+    }
 
     .meta-cell { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); }
     .size-badge { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); }
@@ -195,6 +208,14 @@
         All Documents
       </div>
     </div>
+    <div class="nav-section" style="margin-top: 16px;">
+      <div class="nav-label">Filter by type</div>
+      <div class="nav-item" id="filter-all" onclick="filterByType(null)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        All types
+      </div>
+    </div>
+    <div id="typeFilters" class="nav-section"></div>
   </aside>
 
   <main>
@@ -228,12 +249,50 @@
   const REPO  = 'tymraft.github.io';
   const ROOT  = 'docs';
   const API   = `https://api.github.com/repos/${OWNER}/${REPO}/contents`;
+  const RAW   = `https://raw.githubusercontent.com/${OWNER}/${REPO}/main`;
   const BASE  = 'https://tymraft.github.io';
 
   let currentPath = ROOT;
   let currentItems = [];
   let currentSort = { key: 'name', dir: 1 };
   let searchTerm = '';
+  let activeType = null;
+
+  // Badge colour palette — deterministic by type name
+  const TYPE_COLOURS = {
+    'BRD':           { bg: '#EDE9FE', color: '#7C3AED' },
+    'Guide':         { bg: '#D1FAE5', color: '#059669' },
+    'Brief':         { bg: '#DBEAFE', color: '#2563EB' },
+    'Meeting Notes': { bg: '#FEF3C7', color: '#D97706' },
+    'Design':        { bg: '#FCE7F3', color: '#DB2777' },
+    'RFC':           { bg: '#FEE2E2', color: '#DC2626' },
+    'ADR':           { bg: '#E0F2FE', color: '#0284C7' },
+    'Spec':          { bg: '#F0FDF4', color: '#16A34A' },
+    'Report':        { bg: '#FFF7ED', color: '#EA580C' },
+  };
+
+  // Fallback colour for unknown types — hash the string to pick one
+  const FALLBACK_COLOURS = [
+    { bg: '#F1F5F9', color: '#475569' },
+    { bg: '#F0FDFA', color: '#0F766E' },
+    { bg: '#FDF4FF', color: '#9333EA' },
+    { bg: '#FFFBEB', color: '#B45309' },
+  ];
+
+  function typeColour(type) {
+    if (!type) return null;
+    if (TYPE_COLOURS[type]) return TYPE_COLOURS[type];
+    // Hash to fallback
+    let h = 0;
+    for (let i = 0; i < type.length; i++) h = (h * 31 + type.charCodeAt(i)) & 0xffff;
+    return FALLBACK_COLOURS[h % FALLBACK_COLOURS.length];
+  }
+
+  function typeBadgeHtml(type) {
+    if (!type) return '';
+    const c = typeColour(type);
+    return `<span class="type-badge" style="background:${c.bg};color:${c.color}">${type}</span>`;
+  }
 
   const ICONS = {
     folder: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
@@ -254,15 +313,44 @@
   }
 
   function fileUrl(path) {
-    // Strip extension for clean URLs (Jekyll serves .md without extension,
-    // and .html files are accessible without extension too)
     const withoutExt = path.replace(/\.[^/.]+$/, '');
     return `${BASE}/${withoutExt}`;
+  }
+
+  function parseFrontMatter(text) {
+    const match = text.match(/^---\n([\s\S]*?)\n---/);
+    if (!match) return {};
+    const meta = {};
+    match[1].split('\n').forEach(line => {
+      const [key, ...rest] = line.split(':');
+      if (key && rest.length) meta[key.trim()] = rest.join(':').trim();
+    });
+    return meta;
+  }
+
+  async function fetchFrontMatter(path) {
+    try {
+      const res = await fetch(`${RAW}/${path}`);
+      if (!res.ok) return {};
+      // Only read the first 500 chars — front matter is always at the top
+      const reader = res.body.getReader();
+      let text = '';
+      while (text.length < 500) {
+        const { done, value } = await reader.read();
+        text += new TextDecoder().decode(value);
+        if (done) break;
+      }
+      reader.cancel();
+      return parseFrontMatter(text);
+    } catch {
+      return {};
+    }
   }
 
   async function navigateTo(path) {
     currentPath = path;
     searchTerm = '';
+    activeType = null;
     document.getElementById('searchInput').value = '';
     renderBreadcrumb();
     setLoading();
@@ -276,8 +364,19 @@
         type: item.type,
         size: item.size || 0,
         path: item.path,
+        meta: null, // loaded async
       }));
+
       render();
+
+      // Fetch front matter for all files in parallel
+      const files = currentItems.filter(f => f.type === 'file');
+      await Promise.all(files.map(async f => {
+        f.meta = await fetchFrontMatter(f.path);
+      }));
+
+      render();
+      renderTypeFilters();
     } catch {
       document.getElementById('fileBody').innerHTML = `
         <tr><td colspan="3"><div class="state-msg">
@@ -291,13 +390,12 @@
     document.getElementById('fileBody').innerHTML = `<tr><td colspan="3"><div class="state-msg"><p>Loading...</p></div></td></tr>`;
     document.getElementById('fileCount').textContent = '—';
     document.getElementById('statItems').textContent = '—';
+    document.getElementById('typeFilters').innerHTML = '';
   }
 
   function renderBreadcrumb() {
     const parts = currentPath.split('/');
-    const folderName = parts[parts.length - 1];
-    document.getElementById('folderTitle').textContent = folderName;
-
+    document.getElementById('folderTitle').textContent = parts[parts.length - 1];
     let html = `<span class="crumb" onclick="navigateTo('${ROOT}')">docs</span>`;
     let built = ROOT;
     for (let i = 1; i < parts.length; i++) {
@@ -312,10 +410,44 @@
     document.getElementById('breadcrumb').innerHTML = html;
   }
 
+  function renderTypeFilters() {
+    const types = [...new Set(
+      currentItems.filter(f => f.meta?.type).map(f => f.meta.type)
+    )].sort();
+
+    if (types.length === 0) {
+      document.getElementById('typeFilters').innerHTML = '';
+      return;
+    }
+
+    const html = types.map(type => {
+      const c = typeColour(type);
+      return `<div class="nav-item" id="filter-${type.replace(/\s/g,'-')}" onclick="filterByType('${type}')">
+        <span style="width:8px;height:8px;border-radius:50%;background:${c.color};flex-shrink:0;display:inline-block"></span>
+        ${type}
+      </div>`;
+    }).join('');
+
+    document.getElementById('typeFilters').innerHTML = html;
+  }
+
+  function filterByType(type) {
+    activeType = type;
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    if (type === null) {
+      document.getElementById('filter-all')?.classList.add('active');
+    } else {
+      document.getElementById(`filter-${type.replace(/\s/g,'-')}`)?.classList.add('active');
+    }
+    render();
+  }
+
   function render() {
-    let items = currentItems.filter(f =>
-      f.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    let items = currentItems.filter(f => {
+      const matchSearch = f.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchType = activeType === null || f.meta?.type === activeType;
+      return matchSearch && matchType;
+    });
 
     items.sort((a, b) => {
       if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
@@ -337,23 +469,24 @@
     } else {
       items.forEach(f => {
         const isDir = f.type === 'dir';
+        const badge = (!isDir && f.meta?.type) ? typeBadgeHtml(f.meta.type) : '';
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>
             <div class="file-cell">
               <div class="file-icon ${iconCls(f)}">${isDir ? ICONS.folder : ICONS.file}</div>
-              <div class="file-name">${f.name}</div>
+              <div class="file-name-wrap">
+                <span class="file-name">${f.name}</span>
+                ${badge}
+              </div>
             </div>
           </td>
           <td class="meta-cell">—</td>
           <td><span class="size-badge">${isDir ? '—' : formatSize(f.size)}</span></td>
         `;
         tr.addEventListener('click', () => {
-          if (isDir) {
-            navigateTo(f.path);
-          } else {
-            window.open(fileUrl(f.path), '_blank');
-          }
+          if (isDir) navigateTo(f.path);
+          else window.open(fileUrl(f.path), '_blank');
         });
         tbody.appendChild(tr);
       });

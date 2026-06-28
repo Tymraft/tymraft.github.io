@@ -1,3 +1,11 @@
+---
+title: API Standards Guide
+type: Guide
+status: Draft
+author: Ethan Hollins
+date: 2026-06-28
+---
+
 # API Standards Guide
 
 This guide outlines the API design standards for Tymraft projects.
