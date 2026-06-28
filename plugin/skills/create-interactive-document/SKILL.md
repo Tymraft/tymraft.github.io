@@ -1,12 +1,27 @@
 ---
 name: create-interactive-document
 description: >
-  Use this skill whenever the user wants to create, write, draft, build, or update any kind of
-  document — BRD, brief, guide, meeting notes, report, spec, or similar. Trigger on phrases like
-  "create a document", "write a BRD", "draft a brief", "make a report", "update this doc",
-  "add a section", "I need a document for", or any prompt where producing a structured document
-  is the clear intent. Also trigger proactively when the user describes a project, feature, or
-  initiative in enough detail that a formal document would be the natural output.
+  Trigger this skill whenever the user's prompt matches any of the following patterns:
+
+  CREATION triggers — any phrasing that expresses intent to make a new document:
+  - "create a document", "create document", "I want to create a document", "I need a document"
+  - "create a BRD", "write a BRD", "make a BRD", "new BRD"
+  - "create a brief", "write a brief", "draft a brief"
+  - "create a report", "write a report", "make a report"
+  - "create a spec", "write a spec", "create a guide", "write a guide"
+  - "draft a [anything]", "write a [anything]", "build a [document type]"
+  - "I need a [document type] for [project/feature/initiative]"
+  - Any prompt where the user describes a project or feature in enough detail that a
+    formal document is the natural output
+
+  MODIFICATION triggers — any phrasing that refers to editing an existing file:
+  - "modify [filename]", "update [filename]", "edit [filename]", "change [filename]"
+  - "open [filename]", "load [filename]", "make changes to [filename]"
+  - "add a section to [filename]", "update the [section] in [filename]"
+  - Any prompt referencing a specific filename that exists in the Tymraft repo docs/ folder
+  - "I want to update [document name]", "can you edit [document name]"
+
+  When in doubt, trigger. It is better to load this skill unnecessarily than to miss it.
 ---
 
 # Create Interactive Document
@@ -15,13 +30,18 @@ This skill creates and iteratively edits Tymraft interactive HTML documents. Eve
 follows a strict template from `templates/` in the repo. The document is previewed inline
 after every change using the visualize tool.
 
-## Step 1 — Identify document type
+## Step 1 — Determine mode: create or modify
 
-If the user has explicitly named a document type ("BRD", "brief", "guide", etc.), skip to Step 2.
+**If the prompt references an existing filename or document name (modify mode):**
+- Fetch the file from `docs/` in the `Tymraft/tymraft.github.io` repo
+- Load it as the working document state
+- Skip to Step 5 (iterative editing) and apply the user's requested changes immediately
 
-If no type was given, show the type-picker widget using the visualize tool. Load the HTML from
-`references/type-picker.html` in this skill directory and render it with show_widget. Do not
-ask the user in text — let the widget do the asking. Wait for their response before proceeding.
+**If the prompt is creating something new (create mode):**
+- If the user has explicitly named a document type ("BRD", "brief", "guide", etc.), skip to Step 2
+- If no type was given, show the type-picker widget using the visualize tool. Load the HTML from
+  `references/type-picker.html` in this skill directory and render it with show_widget. Do not
+  ask the user in text — let the widget do the asking. Wait for their response before proceeding.
 
 ## Step 2 — Load the template
 
