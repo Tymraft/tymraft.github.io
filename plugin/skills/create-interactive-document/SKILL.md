@@ -30,9 +30,18 @@ This skill creates and iteratively edits Tymraft interactive HTML documents. Eve
 follows a strict template from `templates/` in the repo. The document is previewed inline
 after every change using the visualize tool.
 
+Use plain, non-technical language at all times. Avoid technical terms — use everyday words
+instead. For example:
+- "save" not "commit"
+- "publish to the site" not "push to the repo"
+- "stored on the site" not "in the repo"
+- "document name" not "filename" or "kebab-case"
+- "ready" or "up to date" not "synced"
+- "make a change" not "apply a diff"
+
 ## Step 1 — Determine mode: create or modify
 
-**If the prompt references an existing filename or document name (modify mode):**
+**If the prompt references an existing document name (modify mode):**
 - Fetch the file from `docs/` in the `Tymraft/tymraft.github.io` repo
 - Load it as the working document state
 - Skip to Step 5 (iterative editing) and apply the user's requested changes immediately
@@ -47,8 +56,8 @@ after every change using the visualize tool.
 
 Fetch the correct template from the repo:
 - BRD → `https://raw.githubusercontent.com/Tymraft/tymraft.github.io/main/templates/brd.html`
-- For types without a dedicated template yet, tell the user and offer to use BRD or create a
-  simple structure. Do not invent a template from scratch.
+- For types without a dedicated template yet, tell the user in plain terms and offer to use the
+  BRD template or build a simple version. Do not invent a template from scratch.
 
 Store the full template HTML as the working document state for this session.
 
@@ -61,22 +70,36 @@ optional fields (date = today, version = 0.1, status = Draft).
 Ask at most one question at a time. If the user provides enough context in their initial prompt
 to fill most fields, proceed and fill what you can — only ask for what's genuinely missing.
 
+Use plain language when asking. For example:
+- "What would you like to call this document?" not "What is the document title?"
+- "Who is writing this?" not "Who is the author?"
+- "What is this document for?" not "Provide a subtitle or description."
+
 ## Step 4 — Build and preview
 
 Fill all placeholders with real content. Replace every `{{PLACEHOLDER}}` — no placeholders
 should remain in the final output. Then render the completed document inline using the
 visualize tool with show_widget.
 
-After rendering, briefly summarise what was filled in and ask if the user wants to:
-- Continue editing a specific section
-- Save the document to the repo
-- Change the document type
+After rendering, always ask the user if they want to save the document to the Tymraft site.
+Use plain language: "Would you like to save this to the Tymraft site so the team can access it?"
+
+Also offer:
+- Making changes to a specific part of the document
+- Changing the document type
+
+Always ask about saving first — it is the primary action after a document is built or updated.
 
 ## Step 5 — Iterative editing
 
 On every subsequent user message, apply their requested changes to the working document,
 then re-render the full document inline using show_widget. Always render the complete
 document — never partial sections.
+
+After every re-render, always ask again whether the user wants to save the updated version
+to the Tymraft site. Use natural, friendly language:
+- "Want me to save this updated version to the site?"
+- "Shall I save this to the Tymraft site so the team can see it?"
 
 Template rules (enforce strictly):
 - Never remove structural elements from the template (sections, cover block, ToC, top bar)
@@ -87,11 +110,14 @@ Template rules (enforce strictly):
 - Status badges: `badge-draft`, `badge-review`, `badge-approved`
 - Timeline dots: `done`, `active`, or plain (pending)
 
-## Step 6 — Saving to repo
+## Step 6 — Saving to the site
 
-When the user asks to save, commit the document to `docs/` in the Tymraft GitHub repo using
-the github tool. The filename should be kebab-case derived from the document title.
-Also add front matter metadata at the very top of the file:
+When the user agrees to save, write the document to `docs/` in the Tymraft GitHub repo using
+the github tool. Derive a simple, readable name from the document title (lowercase words
+separated by hyphens, e.g. "my-project-brd.html"). Do not ask the user to provide or approve
+a filename — just pick a sensible one and mention it after saving.
+
+Also add metadata at the very top of the file so it appears correctly in the document library:
 
 ```html
 ---
@@ -103,13 +129,15 @@ date: [YYYY-MM-DD]
 ---
 ```
 
-After saving, confirm the URL: `https://tymraft.github.io/docs/[filename]`
+After saving, confirm in plain language:
+- "Done! Your document is now live at: https://tymraft.github.io/docs/[name]"
+- "The team can find it in the document library at tymraft.github.io"
 
 ## Inline preview rules
 
 - Use the visualize `show_widget` tool for every preview — never paste raw HTML into chat
 - Always render the full document, not just changed sections
-- Loading messages should be short and calm: "Updating the document...", "Rendering preview..."
+- Loading messages should be short and calm: "Building your document...", "Updating the preview..."
 - The widget renders at ~680px wide so scale the document preview accordingly — use the
   scaled-down CSS approach from the template preview (same structure, smaller font-sizes)
   so the full document is visible without scrolling too far
