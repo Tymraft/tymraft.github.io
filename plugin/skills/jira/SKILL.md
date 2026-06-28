@@ -1,21 +1,25 @@
 ---
 name: jira
 description: >
-  Trigger this skill on any of the following:
+  Trigger this skill on ANY of the following — when in doubt, trigger:
 
   EXPLICIT triggers:
+  - "/tymraft:jira" anywhere in the prompt (primary invocation)
   - "/jira" anywhere in the prompt
   - "create a jira ticket", "create a ticket", "new ticket", "log a ticket"
   - "update ticket", "edit ticket", "modify ticket", "change ticket"
   - "delete ticket", "close ticket", "remove ticket"
-  - "read ticket", "show ticket", "get ticket", "what's in TRD-", "look up TRD-"
+  - "read ticket", "show ticket", "get ticket", "look up ticket"
   - "transition ticket", "move ticket to", "set status of"
+  - "what's in TRD", "look up TRD", "show me TRD"
 
-  IMPLICIT triggers (Jira intent without explicit command):
-  - Any reference to a TRD-NNN ticket key
+  IMPLICIT triggers — ANY of these patterns must trigger this skill:
+  - Any mention of "TRD" (with or without a number, e.g. "TRD-48", "TRD-NEW", "TRD ticket")
+  - Any Jira ticket key matching TRD-NNN
   - "add a story for...", "we need a task for...", "file a bug for..."
-  - "mark TRD-NNN as done", "assign TRD-NNN to..."
-  - "what's the status of TRD-NNN"
+  - "mark TRD-NNN as done", "assign TRD-NNN to...", "what's the status of TRD-NNN"
+  - "ticket", "story", "task", "bug", "epic" used in a project/work-tracking context
+  - Any request to view, read, open, check, update, or create a work item
 
   Space: always TRD. Never ask the user which space.
 
@@ -27,11 +31,23 @@ description: >
 This skill manages Jira tickets in the **TRD** project space using the connected Atlassian Rovo MCP.
 
 All actions follow this sequence:
-1. Gather required information (ask once if anything critical is missing)
-2. **Render the Jira ticket preview widget** (baked HTML below)
-3. Confirm with the user
-4. Execute the MCP action
-5. Report the result with the ticket key and URL
+1. Get cloudId (see **MCP Startup** below — do this first, always)
+2. Gather required information (ask once if anything critical is missing)
+3. **Render the Jira ticket preview widget** (baked HTML below)
+4. Confirm with the user (mutating actions only)
+5. Execute the MCP action
+6. Report the result with the ticket key and URL
+
+---
+
+## MCP Startup — ALWAYS DO THIS FIRST
+
+Before any Jira tool call, Claude MUST call `getAccessibleAtlassianResources` to obtain the `cloudId`.
+
+- **Never** assume the connection is broken just because a prior `search` call failed — `search` uses different auth than `getJiraIssue`. Always attempt `getAccessibleAtlassianResources` first.
+- Cache the `cloudId` for the session once obtained. It will be the `id` field from the first result (e.g. `0dd1fd2a-450a-4cb9-a798-c14a4e1e6612`).
+- If `getAccessibleAtlassianResources` itself fails, then report the connection issue to the user.
+- Do not use `Atlassian Rovo:search` as a proxy for Jira issue lookup — use `getJiraIssue` or `searchJiraIssuesUsingJql` directly with the cloudId.
 
 ---
 
@@ -39,17 +55,17 @@ All actions follow this sequence:
 
 Always use the connected Atlassian Rovo MCP tools:
 - **Read**: `getJiraIssue` or `searchJiraIssuesUsingJql`
-- **Create**: `createJiraIssue` — always set `cloudId` from `getAccessibleAtlassianResources` if not yet known
+- **Create**: `createJiraIssue` — always set `cloudId` from `getAccessibleAtlassianResources`
 - **Update**: `editJiraIssue`
 - **Transition/Delete**: `transitionJiraIssue` or `editJiraIssue` with resolution
 
-Get cloudId once per session using `getAccessibleAtlassianResources` and cache it. Always use `projectKey: "TRD"`.
+Always use `projectKey: "TRD"`.
 
 ---
 
 ## Preview Widget
 
-Before **every** create, update, or delete action, call `show_widget` with the HTML below, populated with the ticket's data.
+Before **every** create, update, or delete action, call `show_widget` with the HTML below, populated with the ticket's data. Also render for READ actions (no confirm step needed for reads).
 
 - **Create / Update**: render the ticket card in its final state (what it will look like after the action).
 - **Delete**: render the card with `data-deleted="true"` — this shows it collapsed and struck through.
@@ -63,7 +79,7 @@ Before **every** create, update, or delete action, call `show_widget` with the H
 
 ### Widget HTML
 
-Inject ticket data by replacing the `<!-- DATA -->` placeholder values. All fields are plain text unless noted. Render one `.jira-card` per ticket inside `#jira-stack`.
+Inject ticket data by replacing the placeholder values. All fields are plain text unless noted. Render one `.jira-card` per ticket inside `#jira-stack`.
 
 ```html
 <!DOCTYPE html>
@@ -102,7 +118,7 @@ Inject ticket data by replacing the `<!-- DATA -->` placeholder values. All fiel
   .field-value{font-size:12px;color:#172b4d}
   .field-value.muted{color:#8993a4;font-style:italic}
   .description-field{grid-column:1/-1}
-  .desc-text{font-size:12px;color:#172b4d;line-height:1.5;white-space:pre-wrap;max-height:80px;overflow:hidden;mask-image:linear-gradient(to bottom,#000 60%,transparent)}
+  .desc-text{font-size:12px;color:#172b4d;line-height:1.6;white-space:pre-wrap;max-height:160px;overflow-y:auto;border:1px solid #ebecf0;border-radius:3px;padding:8px;background:#fafbfc}
   .priority-icon{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle}
   .p-highest,.p-critical{background:#cd1316}
   .p-high{background:#e97f33}
@@ -118,7 +134,7 @@ Inject ticket data by replacing the `<!-- DATA -->` placeholder values. All fiel
   <!-- Repeat .jira-card for each ticket -->
   <div class="jira-card" data-deleted="false">
     <div class="card-header" onclick="toggle(this)">
-      <!-- Issue type dot: add class type-story / type-task / type-bug / type-epic -->
+      <!-- Issue type badge: add class type-story / type-task / type-bug / type-epic / type-subtask -->
       <span class="issue-type type-story" title="Story">S</span>
       <span class="issue-key">TRD-???</span>
       <span class="issue-summary">Ticket summary goes here</span>
@@ -198,7 +214,7 @@ document.querySelectorAll('.card-body').forEach(function(b){b.classList.remove('
 
 ### READ
 1. Call `getJiraIssue` or `searchJiraIssuesUsingJql`
-2. Render preview widget with real data (read-only, no confirm step needed)
+2. Render preview widget with real data (no confirm step needed)
 3. Summarise key fields in one line below the widget
 
 ### UPDATE
@@ -223,9 +239,10 @@ document.querySelectorAll('.card-body').forEach(function(b){b.classList.remove('
 ---
 
 ## Rules
-- Always get cloudId via `getAccessibleAtlassianResources` if not cached in session
+- **Always** call `getAccessibleAtlassianResources` first to get cloudId — even if you think it's cached. Never report a connection failure without trying this first.
+- Do not use `Atlassian Rovo:search` to fetch Jira issues — it uses different auth. Use `getJiraIssue` or `searchJiraIssuesUsingJql` with the cloudId directly.
 - Always use `projectKey: "TRD"` — never ask the user which project
-- Never skip the preview widget — it must render before every mutating action
+- Never skip the preview widget — it must render before every mutating action, and also for reads
 - Never fabricate ticket keys — use `TRD-NEW` until the real key is returned
 - Keep widget HTML minimal — no external dependencies, no images
 - If the MCP returns an error, show it plainly and suggest a fix
