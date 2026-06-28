@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BRD – Document Viewer Platform | Tymraft</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #F4F6F9;
+      --surface:   #FFFFFF;
+      --border:    #DDE2EC;
+      --text:      #111827;
+      --muted:     #6B7A99;
+      --accent:    #2563EB;
+      --accent-bg: #EBF2FF;
+      --green:     #059669;
+      --green-bg:  #D1FAE5;
+      --yellow:    #D97706;
+      --yellow-bg: #FEF3C7;
+      --red:       #DC2626;
+      --red-bg:    #FEE2E2;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    /* ── Top bar ── */
+    .topbar {
+      height: 48px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    .topbar-back {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .topbar-back:hover { text-decoration: underline; }
+
+    .topbar-sep { width: 1px; height: 16px; background: var(--border); }
+
+    .topbar-path {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .topbar-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.03em;
+    }
+    .badge-draft    { background: var(--yellow-bg); color: var(--yellow); }
+    .badge-review   { background: var(--accent-bg); color: var(--accent); }
+    .badge-approved { background: var(--green-bg);  color: var(--green);  }
+
+    /* ── Layout ── */
+    .page {
+      display: flex;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 24px;
+      gap: 48px;
+      align-items: flex-start;
+    }
+
+    /* ── ToC ── */
+    .toc {
+      width: 220px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 72px;
+    }
+
+    .toc-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .toc-list { list-style: none; }
+
+    .toc-item a {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 5px 10px;
+      border-left: 2px solid var(--border);
+      transition: color 0.15s, border-color 0.15s;
+      line-height: 1.4;
+    }
+    .toc-item a:hover { color: var(--text); border-color: var(--muted); }
+    .toc-item.active a { color: var(--accent); border-color: var(--accent); font-weight: 500; }
+
+    .toc-item.sub a { padding-left: 22px; font-size: 12px; }
+
+    /* ── Document ── */
+    .doc {
+      flex: 1;
+      min-width: 0;
+      max-width: 720px;
+    }
+
+    /* Cover */
+    .cover {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 40px 48px;
+      margin-bottom: 32px;
+    }
+
+    .cover-eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .cover-title {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1.25;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .cover-subtitle {
+      font-size: 15px;
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+
+    .cover-meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    .meta-item { display: flex; flex-direction: column; gap: 4px; }
+    .meta-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+    .meta-value { font-size: 13px; color: var(--text); font-weight: 500; }
+    .meta-value.mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+    /* Sections */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 36px 48px;
+      margin-bottom: 20px;
+    }
+
+    .section-anchor { display: block; height: 80px; margin-top: -80px; visibility: hidden; }
+
+    h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h2 .section-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--muted);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 7px;
+    }
+
+    h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      margin-top: 24px;
+      margin-bottom: 10px;
+    }
+
+    p { color: var(--text); margin-bottom: 14px; line-height: 1.7; }
+    p:last-child { margin-bottom: 0; }
+
+    ul, ol { padding-left: 20px; margin-bottom: 14px; }
+    li { margin-bottom: 6px; line-height: 1.65; color: var(--text); }
+    li:last-child { margin-bottom: 0; }
+
+    /* Callout */
+    .callout {
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 20px 0;
+      font-size: 14px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      line-height: 1.6;
+    }
+    .callout-icon { flex-shrink: 0; margin-top: 1px; }
+    .callout.info    { background: var(--accent-bg); color: #1e40af; border: 1px solid #bfdbfe; }
+    .callout.warning { background: var(--yellow-bg); color: #92400e; border: 1px solid #fde68a; }
+    .callout.success { background: var(--green-bg);  color: #065f46; border: 1px solid #a7f3d0; }
+
+    /* Table */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin: 16px 0;
+    }
+    .data-table th {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 9px 14px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .data-table td {
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      vertical-align: top;
+      line-height: 1.55;
+    }
+    .data-table tr:hover td { background: var(--bg); }
+
+    /* Priority badges */
+    .priority {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+    .priority-high   { background: var(--red-bg);    color: var(--red);    }
+    .priority-medium { background: var(--yellow-bg); color: var(--yellow); }
+    .priority-low    { background: var(--green-bg);  color: var(--green);  }
+
+    /* Timeline */
+    .timeline { list-style: none; padding: 0; position: relative; margin: 16px 0; }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 16px;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background: var(--border);
+    }
+    .timeline-item {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .timeline-item:last-child { margin-bottom: 0; }
+    .timeline-dot {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+    .timeline-dot.done   { background: var(--green-bg);  border-color: var(--green);  }
+    .timeline-dot.active { background: var(--accent-bg); border-color: var(--accent); }
+    .timeline-content { padding-top: 6px; }
+    .timeline-date { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+    .timeline-title { font-weight: 600; font-size: 14px; }
+    .timeline-desc { font-size: 13px; color: var(--muted); margin-top: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <a class="topbar-back" href="https://tymraft.github.io">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    Back to docs
+  </a>
+  <div class="topbar-sep"></div>
+  <div class="topbar-path">docs / brd-document-viewer.html</div>
+  <div class="topbar-right">
+    <span class="badge badge-review">IN REVIEW</span>
+    <span class="badge badge-draft" style="background:#f3f4f6;color:#6B7A99;">v0.3</span>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- Table of Contents -->
+  <nav class="toc">
+    <div class="toc-label">Contents</div>
+    <ul class="toc-list" id="tocList">
+      <li class="toc-item"><a href="#overview">Overview</a></li>
+      <li class="toc-item"><a href="#objectives">Objectives</a></li>
+      <li class="toc-item"><a href="#scope">Scope</a></li>
+      <li class="toc-item sub"><a href="#in-scope">In scope</a></li>
+      <li class="toc-item sub"><a href="#out-of-scope">Out of scope</a></li>
+      <li class="toc-item"><a href="#requirements">Requirements</a></li>
+      <li class="toc-item sub"><a href="#functional">Functional</a></li>
+      <li class="toc-item sub"><a href="#non-functional">Non-functional</a></li>
+      <li class="toc-item"><a href="#stakeholders">Stakeholders</a></li>
+      <li class="toc-item"><a href="#timeline">Timeline</a></li>
+      <li class="toc-item"><a href="#risks">Risks</a></li>
+      <li class="toc-item"><a href="#approvals">Approvals</a></li>
+    </ul>
+  </nav>
+
+  <!-- Document body -->
+  <article class="doc">
+
+    <!-- Cover -->
+    <div class="cover">
+      <div class="cover-eyebrow">Business Requirements Document</div>
+      <div class="cover-title">Tymraft Document Viewer Platform</div>
+      <div class="cover-subtitle">A browser-based document library and viewer hosted on GitHub Pages, enabling the Tymraft team to publish, browse, and share internal documents without a third-party CMS.</div>
+      <div class="cover-meta">
+        <div class="meta-item">
+          <div class="meta-label">Document ID</div>
+          <div class="meta-value mono">BRD-2026-001</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Status</div>
+          <div class="meta-value"><span class="badge badge-review">In Review</span></div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Version</div>
+          <div class="meta-value mono">0.3</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Author</div>
+          <div class="meta-value">Ethan Hollins</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Created</div>
+          <div class="meta-value">28 Jun 2026</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Last updated</div>
+          <div class="meta-value">28 Jun 2026</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overview -->
+    <div class="section">
+      <span class="section-anchor" id="overview"></span>
+      <h2><span class="section-num">1</span> Overview</h2>
+      <p>The Tymraft team currently lacks a centralised location for internal documentation. Documents are scattered across email threads, local drives, and ad-hoc shared folders. This creates friction when onboarding new team members, referencing past decisions, or maintaining living documents over time.</p>
+      <p>This BRD defines the requirements for a lightweight, Git-backed document viewer hosted at <strong>tymraft.github.io</strong>. The platform will allow team members to publish Markdown and HTML documents to a GitHub repository and immediately access them through a clean, navigable web interface — no backend, no CMS, no additional infrastructure.</p>
+      <div class="callout info">
+        <div class="callout-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        </div>
+        <div>This document covers the initial MVP scope. Future phases covering search, authentication, and Claude-powered document summarisation are tracked separately.</div>
+      </div>
+    </div>
+
+    <!-- Objectives -->
+    <div class="section">
+      <span class="section-anchor" id="objectives"></span>
+      <h2><span class="section-num">2</span> Objectives</h2>
+      <ul>
+        <li>Provide a single URL where all Tymraft internal documents can be found and accessed.</li>
+        <li>Eliminate manual document management — any file committed to the repo should appear automatically.</li>
+        <li>Support folder-based organisation so teams can structure their own documentation areas.</li>
+        <li>Render documents in a consistent, readable format without requiring authors to write HTML.</li>
+        <li>Integrate with the existing Claude project setup to allow AI-assisted document creation and updates.</li>
+      </ul>
+    </div>
+
+    <!-- Scope -->
+    <div class="section">
+      <span class="section-anchor" id="scope"></span>
+      <h2><span class="section-num">3</span> Scope</h2>
+
+      <span class="section-anchor" id="in-scope"></span>
+      <h3>In scope</h3>
+      <ul>
+        <li>A browsable file explorer at the root of <code>tymraft.github.io</code> rooted at the <code>docs/</code> directory.</li>
+        <li>Folder navigation with breadcrumb trail and live fetching from the GitHub API.</li>
+        <li>Support for Markdown (<code>.md</code>) and HTML (<code>.html</code>) document types in the initial release.</li>
+        <li>A consistent document chrome (top bar, back navigation, metadata) for HTML documents.</li>
+        <li>Claude plugin infrastructure: <code>GETTING_STARTED.md</code>, <code>plugin.json</code>, and skill files hosted in the same repo.</li>
+      </ul>
+
+      <span class="section-anchor" id="out-of-scope"></span>
+      <h3>Out of scope</h3>
+      <ul>
+        <li>Full-text search across all documents (Phase 2).</li>
+        <li>Authentication or access control — the repository is public.</li>
+        <li>A WYSIWYG document editor in the browser.</li>
+        <li>Versioning UI — Git history serves this purpose natively.</li>
+        <li>PDF rendering or preview.</li>
+      </ul>
+    </div>
+
+    <!-- Requirements -->
+    <div class="section">
+      <span class="section-anchor" id="requirements"></span>
+      <h2><span class="section-num">4</span> Requirements</h2>
+
+      <span class="section-anchor" id="functional"></span>
+      <h3>Functional requirements</h3>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Requirement</th>
+            <th>Priority</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="mono" style="font-family:'JetBrains Mono',monospace;font-size:12px;white-space:nowrap">FR-01</td>
+            <td>The explorer shall display all files and folders within <code>docs/</code> by fetching the GitHub Contents API at page load.</td>
+            <td><span class="priority priority-high">High</span></td>
+          </tr>
+          <tr>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:12px;white-space:nowrap">FR-02</td>
+            <td>Clicking a folder shall navigate into that folder and update the breadcrumb trail accordingly.</td>
+            <td><span class="priority priority-high">High</span></td>
+          </tr>
+          <tr>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:12px;white-space:nowrap">FR-03</td>
+            <td>Clicking a file shall open it at its canonical <code>tymraft.github.io</code> URL.</td>
+            <td><span class="priority priority-high">High</span></td>
+          </tr>
+          <tr>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:12px;white-space:nowrap">FR-04</td>
+            <td>The explorer shall support filtering by file name within the current folder via a search field.</td>
+            <td><span class="priority priority-medium">Medium</span></td>
+          </tr>
+          <tr>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:12px;white-space:nowrap">FR-05</td>
+            <td>Columns shall be sortable by name, last modified date, and file size.</td>
+            <td><span class="priority priority-medium">Medium</span></td>
+          </tr>
+          <tr>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:12px;white-space:nowrap">FR-06</td>
+            <td>HTML documents shall include a consistent top bar with a back link, breadcrumb path, and document status badge.</td>
+            <td><span class="priority priority-medium">Medium</span></td>
+          </tr>
+          <tr>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:12px;white-space:nowrap">FR-07</td>
+            <td>The <code>GETTING_STARTED.md</code> file shall contain instructions that Claude can follow to self-install the Tymraft plugin and skills.</td>
+            <td><span class="priority priority-high">High</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <span class="section-anchor" id="non-functional"></span>
+      <h3>Non-functional requirements</h3>
+      <ul>
+        <li><strong>Performance:</strong> Folder contents shall load within 2 seconds on a standard connection. No server-side rendering; all fetching is client-side.</li>
+        <li><strong>Compatibility:</strong> The explorer shall function correctly on the latest versions of Chrome, Safari, Firefox, and Edge.</li>
+        <li><strong>Maintainability:</strong> All documents and configuration are managed via Git commits; no database or admin panel is required.</li>
+        <li><strong>Accessibility:</strong> The explorer shall use semantic HTML and maintain visible keyboard focus states.</li>
+      </ul>
+    </div>
+
+    <!-- Stakeholders -->
+    <div class="section">
+      <span class="section-anchor" id="stakeholders"></span>
+      <h2><span class="section-num">5</span> Stakeholders</h2>
+      <table class="data-table">
+        <thead>
+          <tr><th>Name</th><th>Role</th><th>Responsibility</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Ethan Hollins</td>
+            <td>Project Owner</td>
+            <td>Final approval, requirements sign-off, GitHub repo admin</td>
+          </tr>
+          <tr>
+            <td>Tymraft Team</td>
+            <td>End Users</td>
+            <td>Document authoring, feedback on UX and navigation</td>
+          </tr>
+          <tr>
+            <td>Claude (AI)</td>
+            <td>Implementation</td>
+            <td>Code generation, file commits, plugin and skill authoring</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Timeline -->
+    <div class="section">
+      <span class="section-anchor" id="timeline"></span>
+      <h2><span class="section-num">6</span> Timeline</h2>
+      <ul class="timeline">
+        <li class="timeline-item">
+          <div class="timeline-dot done">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-date">28 Jun 2026</div>
+            <div class="timeline-title">Repo initialised &amp; explorer live</div>
+            <div class="timeline-desc">GitHub Pages repo created, file explorer deployed, initial docs committed.</div>
+          </div>
+        </li>
+        <li class="timeline-item">
+          <div class="timeline-dot active">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.5"><circle cx="12" cy="12" r="4"/></svg>
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-date">Week of 29 Jun 2026</div>
+            <div class="timeline-title">Plugin &amp; getting started guide</div>
+            <div class="timeline-desc">Complete <code>GETTING_STARTED.md</code> with self-install instructions and publish first skills.</div>
+          </div>
+        </li>
+        <li class="timeline-item">
+          <div class="timeline-dot">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DDE2EC" stroke-width="2.5"><circle cx="12" cy="12" r="4"/></svg>
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-date">TBD</div>
+            <div class="timeline-title">Phase 2 — Search &amp; document preview</div>
+            <div class="timeline-desc">Full-text search across all docs, inline Markdown rendering, document preview pane.</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Risks -->
+    <div class="section">
+      <span class="section-anchor" id="risks"></span>
+      <h2><span class="section-num">7</span> Risks</h2>
+      <div class="callout warning">
+        <div class="callout-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div><strong>GitHub API rate limits:</strong> Unauthenticated requests are capped at 60/hour per IP. For a small internal team this is unlikely to be an issue, but heavy use may require adding an auth token to API calls.</div>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>GitHub API rate limiting</td>
+            <td><span class="priority priority-low">Low</span></td>
+            <td><span class="priority priority-medium">Medium</span></td>
+            <td>Add optional GitHub PAT to API requests if rate limits become an issue.</td>
+          </tr>
+          <tr>
+            <td>Repo visibility change</td>
+            <td><span class="priority priority-low">Low</span></td>
+            <td><span class="priority priority-high">High</span></td>
+            <td>Document that making the repo private will break the public API calls in the explorer.</td>
+          </tr>
+          <tr>
+            <td>File rendering inconsistency</td>
+            <td><span class="priority priority-medium">Medium</span></td>
+            <td><span class="priority priority-low">Low</span></td>
+            <td>Establish a standard HTML template (this document) for all rich documents.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Approvals -->
+    <div class="section">
+      <span class="section-anchor" id="approvals"></span>
+      <h2><span class="section-num">8</span> Approvals</h2>
+      <table class="data-table">
+        <thead>
+          <tr><th>Name</th><th>Role</th><th>Status</th><th>Date</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Ethan Hollins</td>
+            <td>Project Owner</td>
+            <td><span class="badge badge-review">Pending</span></td>
+            <td>—</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout success" style="margin-top:20px">
+        <div class="callout-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div>Once approved, this document will be marked <strong>v1.0</strong> and the status badge updated to Approved.</div>
+      </div>
+    </div>
+
+  </article>
+</div>
+
+<script>
+  // Highlight active ToC item on scroll
+  const sections = document.querySelectorAll('.section-anchor');
+  const tocItems = document.querySelectorAll('.toc-item');
+
+  function getActiveSectionId() {
+    let active = null;
+    sections.forEach(anchor => {
+      const top = anchor.getBoundingClientRect().top;
+      if (top <= 100) active = anchor.id;
+    });
+    return active;
+  }
+
+  function updateToc() {
+    const activeId = getActiveSectionId();
+    tocItems.forEach(item => {
+      const link = item.querySelector('a');
+      const href = link.getAttribute('href').replace('#', '');
+      item.classList.toggle('active', href === activeId);
+    });
+  }
+
+  window.addEventListener('scroll', updateToc, { passive: true });
+  updateToc();
+</script>
+</body>
+</html>
