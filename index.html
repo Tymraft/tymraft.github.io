@@ -11,18 +11,18 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:        #0F1623;
-      --surface:   #1A2332;
-      --surface2:  #212E42;
-      --border:    #2A3A52;
-      --text:      #E8EDF5;
-      --muted:     #8B9BB4;
-      --accent:    #3B82F6;
+      --bg:        #F4F6F9;
+      --surface:   #FFFFFF;
+      --surface2:  #EEF1F6;
+      --border:    #DDE2EC;
+      --text:      #111827;
+      --muted:     #6B7A99;
+      --accent:    #2563EB;
       --accent-dim:#1D4ED8;
-      --green:     #34D399;
-      --yellow:    #FBBF24;
-      --red:       #F87171;
-      --purple:    #A78BFA;
+      --green:     #059669;
+      --yellow:    #D97706;
+      --red:       #DC2626;
+      --purple:    #7C3AED;
     }
 
     body {
@@ -46,6 +46,7 @@
       position: sticky;
       top: 0;
       z-index: 10;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     }
 
     .logo {
@@ -99,7 +100,6 @@
     }
 
     .search-box input::placeholder { color: var(--muted); }
-
     .search-icon { color: var(--muted); flex-shrink: 0; }
 
     /* ── Layout ── */
@@ -146,7 +146,7 @@
     }
 
     .nav-item:hover { background: var(--surface2); color: var(--text); }
-    .nav-item.active { background: var(--surface2); color: var(--accent); }
+    .nav-item.active { background: #EBF2FF; color: var(--accent); }
     .nav-item svg { flex-shrink: 0; }
 
     /* ── Main ── */
@@ -178,14 +178,7 @@
     .toolbar {
       display: flex;
       align-items: center;
-      justify-content: space-between;
       margin-bottom: 16px;
-    }
-
-    .toolbar-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
     }
 
     .folder-title {
@@ -201,36 +194,8 @@
       border: 1px solid var(--border);
       border-radius: 20px;
       padding: 2px 10px;
+      margin-left: 10px;
     }
-
-    .btn {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 7px 14px;
-      border-radius: 6px;
-      font-size: 13px;
-      font-family: 'Inter', sans-serif;
-      font-weight: 500;
-      cursor: pointer;
-      border: none;
-      transition: background 0.15s;
-    }
-
-    .btn-primary {
-      background: var(--accent);
-      color: #fff;
-    }
-
-    .btn-primary:hover { background: var(--accent-dim); }
-
-    .btn-ghost {
-      background: transparent;
-      color: var(--muted);
-      border: 1px solid var(--border);
-    }
-
-    .btn-ghost:hover { background: var(--surface2); color: var(--text); }
 
     /* ── Table ── */
     .file-table {
@@ -239,10 +204,12 @@
       border: 1px solid var(--border);
       border-radius: 10px;
       overflow: hidden;
+      background: var(--surface);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
     }
 
     .file-table thead tr {
-      background: var(--surface);
+      background: var(--surface2);
       border-bottom: 1px solid var(--border);
     }
 
@@ -274,11 +241,9 @@
       border-bottom: 1px solid var(--border);
       transition: background 0.12s;
       cursor: pointer;
-      position: relative;
     }
 
     .file-table tbody tr:last-child { border-bottom: none; }
-
     .file-table tbody tr:hover { background: var(--surface2); }
 
     .file-table tbody tr:hover td:first-child {
@@ -311,21 +276,22 @@
       flex-shrink: 0;
     }
 
-    .file-icon.md   { background: rgba(59,130,246,0.15); color: var(--accent); }
-    .file-icon.pdf  { background: rgba(248,113,113,0.15); color: var(--red); }
-    .file-icon.doc  { background: rgba(167,139,250,0.15); color: var(--purple); }
-    .file-icon.xls  { background: rgba(52,211,153,0.15);  color: var(--green); }
-    .file-icon.img  { background: rgba(251,191,36,0.15);  color: var(--yellow); }
-    .file-icon.misc { background: rgba(139,155,180,0.15); color: var(--muted); }
+    .file-icon.md   { background: #DBEAFE; color: var(--accent); }
+    .file-icon.pdf  { background: #FEE2E2; color: var(--red); }
+    .file-icon.doc  { background: #EDE9FE; color: var(--purple); }
+    .file-icon.xls  { background: #D1FAE5; color: var(--green); }
+    .file-icon.img  { background: #FEF3C7; color: var(--yellow); }
+    .file-icon.misc { background: var(--surface2); color: var(--muted); }
 
     .file-name {
       font-weight: 500;
       font-size: 13px;
+      color: var(--text);
     }
 
-    .file-name:hover { color: var(--accent); }
+    tr:hover .file-name { color: var(--accent); }
 
-    .file-ext {
+    .file-path {
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
       color: var(--muted);
@@ -340,35 +306,10 @@
     }
 
     .size-badge {
-      display: inline-block;
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
       color: var(--muted);
     }
-
-    /* ── Actions ── */
-    .row-actions {
-      display: flex;
-      gap: 4px;
-      opacity: 0;
-      transition: opacity 0.15s;
-    }
-
-    tr:hover .row-actions { opacity: 1; }
-
-    .action-btn {
-      padding: 4px 8px;
-      border-radius: 4px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--muted);
-      font-size: 11px;
-      cursor: pointer;
-      font-family: 'Inter', sans-serif;
-      transition: background 0.12s, color 0.12s;
-    }
-
-    .action-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
 
     /* ── Empty state ── */
     .empty {
@@ -377,7 +318,7 @@
       color: var(--muted);
     }
 
-    .empty svg { opacity: 0.3; margin-bottom: 12px; }
+    .empty svg { opacity: 0.25; margin-bottom: 12px; }
     .empty p { font-size: 14px; }
 
     /* ── Stats bar ── */
@@ -402,7 +343,6 @@
 </head>
 <body>
 
-<!-- Header -->
 <header>
   <div class="logo">Tym<span>raft</span></div>
   <div class="header-sep"></div>
@@ -416,26 +356,16 @@
 </header>
 
 <div class="layout">
-
-  <!-- Sidebar -->
   <aside>
     <div class="nav-section">
       <div class="nav-label">Library</div>
-      <div class="nav-item active">
+      <div class="nav-item active" onclick="filterType('all')" id="filter-all">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         All Documents
-      </div>
-      <div class="nav-item">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-        docs/
       </div>
     </div>
     <div class="nav-section" style="margin-top:16px">
       <div class="nav-label">Filter by type</div>
-      <div class="nav-item" onclick="filterType('all')" id="filter-all">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        All types
-      </div>
       <div class="nav-item" onclick="filterType('md')" id="filter-md">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         Markdown
@@ -443,29 +373,16 @@
     </div>
   </aside>
 
-  <!-- Main -->
   <main>
     <div class="breadcrumb">
-      <a href="#">tymraft.github.io</a>
+      <a href="https://tymraft.github.io">tymraft.github.io</a>
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
       <span>docs/</span>
     </div>
 
     <div class="toolbar">
-      <div class="toolbar-left">
-        <div class="folder-title">docs</div>
-        <div class="file-count" id="fileCount">3 files</div>
-      </div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-ghost">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-          List
-        </button>
-        <button class="btn btn-primary">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          New file
-        </button>
-      </div>
+      <div class="folder-title">docs</div>
+      <div class="file-count" id="fileCount">4 files</div>
     </div>
 
     <table class="file-table" id="fileTable">
@@ -474,14 +391,13 @@
           <th onclick="sortBy('name')" id="th-name">Name <span class="sort-icon">↕</span></th>
           <th onclick="sortBy('modified')" id="th-modified">Last modified <span class="sort-icon">↕</span></th>
           <th onclick="sortBy('size')" id="th-size">Size <span class="sort-icon">↕</span></th>
-          <th>Actions</th>
         </tr>
       </thead>
       <tbody id="fileBody"></tbody>
     </table>
 
     <div class="stats-bar">
-      <div class="stat"><strong id="statFiles">3</strong> files</div>
+      <div class="stat"><strong id="statFiles">4</strong> files</div>
       <div class="stat"><strong id="statSize">—</strong> total</div>
       <div class="stat">Synced from <strong>github.com/Tymraft/tymraft.github.io</strong></div>
     </div>
@@ -510,6 +426,13 @@
       modified: '2026-06-28',
       size: 541,
       path: 'docs/meeting-notes-2026-06-28.md'
+    },
+    {
+      name: 'api-standards.md',
+      ext: 'md',
+      modified: '2026-06-28',
+      size: 398,
+      path: 'docs/guides/api-standards.md'
     }
   ];
 
@@ -519,9 +442,9 @@
 
   function getIcon(ext) {
     const icons = {
-      md: { cls: 'md', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>' },
+      md:  { cls: 'md',  svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>' },
       pdf: { cls: 'pdf', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
-      doc:  { cls: 'doc', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
+      doc: { cls: 'doc', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
     };
     return icons[ext] || { cls: 'misc', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' };
   }
@@ -544,7 +467,8 @@
   function render() {
     let files = FILES.filter(f => {
       const matchType = currentFilter === 'all' || f.ext === currentFilter;
-      const matchSearch = f.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchSearch = f.name.toLowerCase().includes(searchTerm.toLowerCase())
+        || f.path.toLowerCase().includes(searchTerm.toLowerCase());
       return matchType && matchSearch;
     });
 
@@ -559,12 +483,12 @@
     tbody.innerHTML = '';
 
     if (files.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="4"><div class="empty"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><p>No documents found</p></div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="3"><div class="empty"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><p>No documents found</p></div></td></tr>`;
     } else {
       files.forEach(f => {
         const icon = getIcon(f.ext);
-        const ghUrl = `https://github.com/Tymraft/tymraft.github.io/blob/main/${f.path}`;
-        const rawUrl = `https://raw.githubusercontent.com/Tymraft/tymraft.github.io/main/${f.path}`;
+        const url = `https://tymraft.github.io/${f.path}`;
+        const isSubfolder = f.path.split('/').length > 2;
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>
@@ -572,20 +496,14 @@
               <div class="file-icon ${icon.cls}">${icon.svg}</div>
               <div>
                 <div class="file-name">${f.name}</div>
-                <div class="file-ext">.${f.ext}</div>
+                <div class="file-path">${isSubfolder ? f.path.replace('docs/', '') : ''}</div>
               </div>
             </div>
           </td>
           <td class="meta-cell">${formatDate(f.modified)}</td>
           <td><span class="size-badge">${formatSize(f.size)}</span></td>
-          <td>
-            <div class="row-actions">
-              <button class="action-btn" onclick="event.stopPropagation(); window.open('${ghUrl}','_blank')">View</button>
-              <button class="action-btn" onclick="event.stopPropagation(); window.open('${rawUrl}','_blank')">Raw</button>
-            </div>
-          </td>
         `;
-        tr.addEventListener('click', () => window.open(ghUrl, '_blank'));
+        tr.addEventListener('click', () => window.open(url, '_blank'));
         tbody.appendChild(tr);
       });
     }
