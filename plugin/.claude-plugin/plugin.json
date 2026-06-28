@@ -1,0 +1,9 @@
+{
+  "name": "tymraft",
+  "version": "0.1.0",
+  "description": "Plugin for the tymraft team",
+  "author": {
+    "name": "Tymraft"
+  },
+  "repository": "https://github.com/Tymraft/tymraft.github.io"
+}
