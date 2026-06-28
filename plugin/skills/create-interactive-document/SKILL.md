@@ -26,9 +26,10 @@ description: >
 
 # Create Interactive Document
 
-This skill creates and iteratively edits Tymraft interactive HTML documents. Every document
-follows a strict template from `templates/` in the repo. The document is previewed inline
-after every change using the visualize tool.
+This skill creates and iteratively edits Tymraft interactive HTML documents. Documents are
+built using the **Jekyll includes system** — Claude writes a small data file (~1–2KB) and
+Jekyll assembles the final page from reusable components. Claude never reads or writes the
+full template HTML.
 
 Use plain, non-technical language at all times. Avoid technical terms — use everyday words
 instead. For example:
@@ -52,97 +53,172 @@ instead. For example:
   `references/type-picker.html` in this skill directory and render it with show_widget. Do not
   ask the user in text — let the widget do the asking. Wait for their response before proceeding.
 
-## Step 2 — Load the template
+## Step 2 — Identify the document type and layout
 
-Fetch the correct template from the repo:
-- BRD → `https://raw.githubusercontent.com/Tymraft/tymraft.github.io/main/templates/brd.html`
-- For types without a dedicated template yet, tell the user in plain terms and offer to use the
-  BRD template or build a simple version. Do not invent a template from scratch.
+Match the requested document type to its Jekyll layout:
 
-Store the full template HTML as the working document state for this session.
+| Document type | layout | Available includes |
+|---|---|---|
+| BRD | `brd` | cover, section, callout, timeline-item (see below) |
+
+For types without a layout yet, tell the user in plain terms and offer to use the BRD layout
+or build a simple version. Do not invent a template from scratch.
+
+**Do not fetch any template file.** The layout handles all CSS, fonts, and structure
+automatically. Claude only writes the document's content.
 
 ## Step 3 — Gather missing information
 
-Scan the template for unfilled `{{PLACEHOLDER}}` values. Ask the user for anything critical
-that cannot be reasonably inferred (title, author, document ID). Make sensible defaults for
-optional fields (date = today, version = 0.1, status = Draft).
+Ask the user for anything critical that cannot be reasonably inferred:
+- Document title
+- Author
+- Document ID (e.g. BRD-2026-001)
+- A brief description (subtitle)
+
+Make sensible defaults for optional fields: date = today, version = 0.1, status = draft.
 
 Ask at most one question at a time. If the user provides enough context in their initial prompt
-to fill most fields, proceed and fill what you can — only ask for what's genuinely missing.
+to fill most fields, proceed and only ask for what's genuinely missing.
 
-Use plain language when asking. For example:
+Use plain language:
 - "What would you like to call this document?" not "What is the document title?"
 - "Who is writing this?" not "Who is the author?"
 - "What is this document for?" not "Provide a subtitle or description."
 
-## Step 4 — Build and preview
+## Step 4 — Build the document file
 
-Fill all placeholders with real content. Replace every `{{PLACEHOLDER}}` — no placeholders
-should remain in the final output. Then render the completed document inline using the
-visualize tool with show_widget.
+Compose the document as a small Jekyll file. This is the **only thing Claude writes** — no CSS,
+no SVG, no boilerplate.
+
+### BRD file structure
+
+```
+---
+layout: brd
+title: "[Document Title]"
+file_path: "[filename].html"
+status: draft
+version: "0.1"
+toc: |
+  <li class="toc-item"><a href="#overview">Overview</a></li>
+  <li class="toc-item"><a href="#objectives">Objectives</a></li>
+  ... (one line per section)
+---
+
+{% include brd/cover.html
+   title="[Title]"
+   subtitle="[Subtitle]"
+   id="[BRD-YYYY-NNN]"
+   status="draft"
+   version="0.1"
+   author="[Author]"
+   created="[YYYY-MM-DD]"
+%}
+
+{% capture section_content %}
+<p>Content goes here...</p>
+{% endcapture %}
+{% include brd/section.html id="overview" num="1" title="Overview" content=section_content %}
+```
+
+### Available includes and their parameters
+
+**`brd/cover.html`**
+Parameters: `title`, `subtitle`, `id`, `status` (draft|review|approved), `version`, `author`,
+`created`, `updated` (optional, defaults to created), `extra_meta` (optional raw HTML for
+additional meta fields)
+
+**`brd/section.html`**
+Parameters: `id` (anchor id), `num` (section number), `title`, `content` (HTML string)
+Content is passed via a `{% capture %}` block. Can contain any HTML — paragraphs, lists,
+tables, nested headings (h3), callouts, timelines, or raw inline HTML for one-off needs.
+
+**`brd/callout.html`**
+Parameters: `type` (info|warning|success), `content` (HTML string)
+Used inside a section's capture block.
+Example: `{% include brd/callout.html type="warning" content="<strong>Note:</strong> ..." %}`
+
+**`brd/timeline-item.html`**
+Parameters: `state` (done|active|pending), `date`, `title`, `desc` (optional)
+Used inside a `<ul class="timeline">` inside a section's capture block.
+
+### Tables
+
+Write tables directly as HTML inside capture blocks — no include needed:
+```html
+<table class="data-table">
+  <thead><tr><th>ID</th><th>Requirement</th><th>Priority</th></tr></thead>
+  <tbody>
+    <tr>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px">FR-01</td>
+      <td>Description</td>
+      <td><span class="priority priority-high">High</span></td>
+    </tr>
+  </tbody>
+</table>
+```
+
+Priority badge classes: `priority-high`, `priority-medium`, `priority-low`
+Status badge classes: `badge-draft`, `badge-review`, `badge-approved`
+
+### Rules
+- Every section needs a unique `id` that matches a ToC entry in the front matter
+- Section numbers must stay sequential
+- Never add inline `<style>` blocks — all styles come from the layout
+- Never add `<html>`, `<head>`, or `<body>` tags — Jekyll handles the page shell
+- The `toc` front matter value must list every section in order
+
+### Preview
+
+After building the document, render a preview inline using the visualize `show_widget` tool.
+To preview, fetch the CSS from `_includes/brd/shell-head.html` in the repo to get the correct
+styles, then render the document's visible content (cover + sections) inside a scaled wrapper.
+Loading messages should be short and calm: "Building your document...", "Updating the preview..."
 
 After rendering, always ask the user if they want to save the document to the Tymraft site.
 Use plain language: "Would you like to save this to the Tymraft site so the team can access it?"
 
 Also offer:
 - Making changes to a specific part of the document
-- Changing the document type
+- Adding or removing sections
 
 Always ask about saving first — it is the primary action after a document is built or updated.
 
 ## Step 5 — Iterative editing
 
-On every subsequent user message, apply their requested changes to the working document,
-then re-render the full document inline using show_widget. Always render the complete
-document — never partial sections.
+On every subsequent user message, apply their requested changes to the working document file,
+then re-render the preview using show_widget. Always render the complete document — never
+partial sections.
 
-After every re-render, always ask again whether the user wants to save the updated version
-to the Tymraft site. Use natural, friendly language:
+For small changes (a single field, one sentence), update only that part of the file content
+in memory. There is no need to re-read the file from GitHub — keep the current state in context.
+
+After every re-render, always ask again whether the user wants to save the updated version:
 - "Want me to save this updated version to the site?"
 - "Shall I save this to the Tymraft site so the team can see it?"
 
-Template rules (enforce strictly):
-- Never remove structural elements from the template (sections, cover block, ToC, top bar)
-- Never change CSS variables, fonts, or colour tokens
-- Never deviate from the template layout unless the user explicitly asks
-- Section numbers must stay sequential
-- Priority badges must use the correct classes: `priority-high`, `priority-medium`, `priority-low`
-- Status badges: `badge-draft`, `badge-review`, `badge-approved`
-- Timeline dots: `done`, `active`, or plain (pending)
+Editing rules (enforce strictly):
+- Never add `<style>` blocks or inline CSS beyond what's already in the data file
+- Never remove sections the user hasn't asked to remove
+- Section numbers must stay sequential after additions or removals
+- Keep the ToC front matter in sync with actual sections at all times
+- Priority and status badge classes must match the allowed values above
 
 ## Step 6 — Saving to the site
 
 When the user agrees to save, write the document to `docs/` in the Tymraft GitHub repo using
 the github tool. Derive a simple, readable name from the document title (lowercase words
-separated by hyphens, e.g. "my-project-brd.html"). Do not ask the user to provide or approve
+separated by hyphens, e.g. `my-project-brd.html`). Do not ask the user to provide or approve
 a filename — just pick a sensible one and mention it after saving.
 
-Also add metadata at the very top of the file so it appears correctly in the document library:
-
-```html
----
-title: [Document Title]
-type: [Document Type]
-status: [Draft|In Review|Approved]
-author: [Author]
-date: [YYYY-MM-DD]
----
-```
+Write the file exactly as composed — the Jekyll front matter and include calls are the complete
+file content. No wrapper HTML needed.
 
 After saving, confirm in plain language:
 - "Done! Your document is now live at: https://tymraft.github.io/docs/[name]"
 - "The team can find it in the document library at tymraft.github.io"
 
-## Inline preview rules
-
-- Use the visualize `show_widget` tool for every preview — never paste raw HTML into chat
-- Always render the full document, not just changed sections
-- Loading messages should be short and calm: "Building your document...", "Updating the preview..."
-- The widget renders at ~680px wide so scale the document preview accordingly — use the
-  scaled-down CSS approach from the template preview (same structure, smaller font-sizes)
-  so the full document is visible without scrolling too far
-
 ## What to read next
 
 - `references/type-picker.html` — the inline widget shown when no document type is specified
-- `references/brd-template-guide.md` — section-by-section guide to filling out a BRD
+- `references/brd-template-guide.md` — section-by-section guide to what content goes in each BRD section
