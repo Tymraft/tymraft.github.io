@@ -1,0 +1,16 @@
+{
+  "name": "tymraft",
+  "owner": {
+    "name": "Tymraft",
+    "url": "https://tymraft.github.io"
+  },
+  "plugins": [
+    {
+      "name": "tymraft",
+      "source": "./plugin",
+      "description": "Tymraft team plugin — skills, workflows, and project context for Claude.",
+      "strict": false,
+      "skills": ["./plugin/skills"]
+    }
+  ]
+}
