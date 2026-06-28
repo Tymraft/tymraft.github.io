@@ -228,6 +228,7 @@
   const REPO  = 'tymraft.github.io';
   const ROOT  = 'docs';
   const API   = `https://api.github.com/repos/${OWNER}/${REPO}/contents`;
+  const BASE  = 'https://tymraft.github.io';
 
   let currentPath = ROOT;
   let currentItems = [];
@@ -250,6 +251,13 @@
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / 1048576).toFixed(1) + ' MB';
+  }
+
+  function fileUrl(path) {
+    // Strip extension for clean URLs (Jekyll serves .md without extension,
+    // and .html files are accessible without extension too)
+    const withoutExt = path.replace(/\.[^/.]+$/, '');
+    return `${BASE}/${withoutExt}`;
   }
 
   async function navigateTo(path) {
@@ -310,7 +318,6 @@
     );
 
     items.sort((a, b) => {
-      // Folders always first
       if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
       let av = a[currentSort.key] ?? '';
       let bv = b[currentSort.key] ?? '';
@@ -345,7 +352,7 @@
           if (isDir) {
             navigateTo(f.path);
           } else {
-            window.open(`https://tymraft.github.io/${f.path}`, '_blank');
+            window.open(fileUrl(f.path), '_blank');
           }
         });
         tbody.appendChild(tr);
