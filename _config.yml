@@ -1,3 +1,7 @@
 title: Tymraft Docs
 description: Tymraft internal document library
 theme: minima
+
+exclude:
+  - plugin/
+  - templates/
