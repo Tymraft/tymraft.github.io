@@ -1,0 +1,19 @@
+{% assign _status = include.status | default: 'draft' %}
+<div class="topbar">
+  <a class="topbar-back" href="https://tymraft.github.io">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    Back to docs
+  </a>
+  <div class="topbar-sep"></div>
+  <div class="topbar-path">docs / {{ include.file_path }}</div>
+  <div class="topbar-right">
+    {% if _status == 'approved' %}
+      <span class="badge badge-approved">APPROVED</span>
+    {% elsif _status == 'review' %}
+      <span class="badge badge-review">IN REVIEW</span>
+    {% else %}
+      <span class="badge badge-draft">DRAFT</span>
+    {% endif %}
+    <span class="badge" style="background:#f3f4f6;color:#6B7A99;">v{{ include.version | default: '0.1' }}</span>
+  </div>
+</div>

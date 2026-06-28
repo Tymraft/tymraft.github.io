@@ -1,0 +1,158 @@
+---
+layout: brd
+title: "Payment Gateway Integration"
+file_path: "example-brd.html"
+status: draft
+version: "0.1"
+toc: |
+  <li class="toc-item"><a href="#overview">Overview</a></li>
+  <li class="toc-item"><a href="#objectives">Objectives</a></li>
+  <li class="toc-item"><a href="#scope">Scope</a></li>
+  <li class="toc-item sub"><a href="#in-scope">In scope</a></li>
+  <li class="toc-item sub"><a href="#out-of-scope">Out of scope</a></li>
+  <li class="toc-item"><a href="#requirements">Requirements</a></li>
+  <li class="toc-item sub"><a href="#functional">Functional</a></li>
+  <li class="toc-item sub"><a href="#non-functional">Non-functional</a></li>
+  <li class="toc-item"><a href="#timeline">Timeline</a></li>
+  <li class="toc-item"><a href="#risks">Risks</a></li>
+  <li class="toc-item"><a href="#approvals">Approvals</a></li>
+---
+
+{% include brd/cover.html
+   title="Payment Gateway Integration"
+   subtitle="Replacing the legacy NAB Transact integration with Stripe"
+   id="BRD-2026-001"
+   status="draft"
+   version="0.1"
+   author="Tymraft Team"
+   created="2026-06-28"
+%}
+
+{% capture overview_content %}
+<p>This document outlines the business requirements for migrating from the existing NAB Transact payment gateway to Stripe. The migration is driven by the need to support modern payment methods, reduce transaction failure rates, and simplify PCI compliance.</p>
+<p>Stripe's native support for Apple Pay, Google Pay, and card vaulting will unlock checkout improvements that are not possible on the current provider.</p>
+{% include brd/callout.html type="info" content="This BRD covers the web checkout flow only. Native mobile app payment changes are tracked separately under BRD-2026-002." %}
+{% endcapture %}
+{% include brd/section.html id="overview" num="1" title="Overview" content=overview_content %}
+
+{% capture objectives_content %}
+<ul>
+  <li>Reduce payment failure rate from 4.2% to under 1.5%</li>
+  <li>Support Apple Pay, Google Pay, and BPAY</li>
+  <li>Eliminate annual PCI DSS audit overhead via Stripe's SAQ-A compliance path</li>
+  <li>Deliver a faster checkout experience with one-click payments for returning customers</li>
+</ul>
+{% endcapture %}
+{% include brd/section.html id="objectives" num="2" title="Objectives" content=objectives_content %}
+
+{% capture scope_content %}
+<h3>In scope</h3>
+<ul>
+  <li>Web checkout integration with Stripe Payment Element</li>
+  <li>Card vaulting for returning customers</li>
+  <li>Apple Pay and Google Pay on supported browsers</li>
+  <li>Webhook handling for payment events</li>
+  <li>Refund and dispute management via Stripe Dashboard</li>
+</ul>
+<span class="section-anchor" id="in-scope"></span>
+<span class="section-anchor" id="out-of-scope"></span>
+<h3>Out of scope</h3>
+<ul>
+  <li>Native iOS and Android in-app payments</li>
+  <li>Subscription or recurring billing</li>
+  <li>Multi-currency support (future phase)</li>
+</ul>
+{% endcapture %}
+{% include brd/section.html id="scope" num="3" title="Scope" content=scope_content %}
+
+{% capture requirements_content %}
+<span class="section-anchor" id="functional"></span>
+<h3>Functional requirements</h3>
+<table class="data-table">
+  <thead>
+    <tr><th>ID</th><th>Requirement</th><th>Priority</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;white-space:nowrap">FR-01</td>
+      <td>Customers must be able to pay by credit/debit card at checkout</td>
+      <td><span class="priority priority-high">High</span></td>
+    </tr>
+    <tr>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;white-space:nowrap">FR-02</td>
+      <td>Returning customers must be offered one-click payment with a saved card</td>
+      <td><span class="priority priority-high">High</span></td>
+    </tr>
+    <tr>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;white-space:nowrap">FR-03</td>
+      <td>Apple Pay and Google Pay must be available on supported devices</td>
+      <td><span class="priority priority-medium">Medium</span></td>
+    </tr>
+    <tr>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;white-space:nowrap">FR-04</td>
+      <td>Failed payments must trigger a retry prompt with a clear error message</td>
+      <td><span class="priority priority-medium">Medium</span></td>
+    </tr>
+  </tbody>
+</table>
+<span class="section-anchor" id="non-functional"></span>
+<h3>Non-functional requirements</h3>
+<ul>
+  <li><strong>Performance:</strong> Stripe Payment Element must load within 1.5s on a 4G connection</li>
+  <li><strong>Compatibility:</strong> Must support Chrome, Safari, Firefox, and Edge on desktop and mobile</li>
+  <li><strong>Security:</strong> Card data must never touch Tymraft servers — handled entirely by Stripe.js</li>
+  <li><strong>Accessibility:</strong> Payment form must meet WCAG 2.1 AA</li>
+</ul>
+{% endcapture %}
+{% include brd/section.html id="requirements" num="4" title="Requirements" content=requirements_content %}
+
+{% capture timeline_content %}
+<ul class="timeline">
+  {% include brd/timeline-item.html state="done" date="2026-06-01" title="Discovery & vendor selection" desc="Evaluated Stripe, Adyen, and Square. Stripe selected." %}
+  {% include brd/timeline-item.html state="active" date="2026-07-01" title="BRD sign-off & technical design" desc="Stakeholder review and architecture finalized." %}
+  {% include brd/timeline-item.html state="pending" date="2026-08-01" title="Development & integration" desc="Stripe Payment Element integrated in staging." %}
+  {% include brd/timeline-item.html state="pending" date="2026-09-15" title="UAT & go-live" desc="User acceptance testing followed by production cutover." %}
+</ul>
+{% endcapture %}
+{% include brd/section.html id="timeline" num="5" title="Timeline" content=timeline_content %}
+
+{% capture risks_content %}
+{% include brd/callout.html type="warning" content="<strong>Migration window:</strong> The cutover from NAB Transact to Stripe must occur during a low-traffic window to minimise checkout disruption." %}
+<table class="data-table">
+  <thead>
+    <tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Customer confusion during cutover</td>
+      <td><span class="priority priority-low">Low</span></td>
+      <td><span class="priority priority-medium">Medium</span></td>
+      <td>Run both gateways in parallel for 2 weeks with Stripe as primary</td>
+    </tr>
+    <tr>
+      <td>Webhook delivery failures causing missed payment events</td>
+      <td><span class="priority priority-medium">Medium</span></td>
+      <td><span class="priority priority-high">High</span></td>
+      <td>Implement idempotent event handler with retry queue and alerting</td>
+    </tr>
+  </tbody>
+</table>
+{% endcapture %}
+{% include brd/section.html id="risks" num="6" title="Risks" content=risks_content %}
+
+{% capture approvals_content %}
+<table class="data-table">
+  <thead>
+    <tr><th>Name</th><th>Role</th><th>Status</th><th>Date</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Tymraft Team</td>
+      <td>Product Owner</td>
+      <td><span class="badge badge-review">Pending</span></td>
+      <td>—</td>
+    </tr>
+  </tbody>
+</table>
+{% endcapture %}
+{% include brd/section.html id="approvals" num="7" title="Approvals" content=approvals_content %}

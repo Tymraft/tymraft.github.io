@@ -1,0 +1,14 @@
+{% include brd/shell-head.html title=page.title %}
+{% include brd/topbar.html file_path=page.file_path status=page.status version=page.version %}
+<div class="page">
+  <nav class="toc">
+    <div class="toc-label">Contents</div>
+    <ul class="toc-list" id="tocList">
+      {{ page.toc }}
+    </ul>
+  </nav>
+  <article class="doc">
+    {{ content }}
+  </article>
+</div>
+{% include brd/shell-foot.html %}

@@ -1,0 +1,20 @@
+<script>
+  const sections = document.querySelectorAll('.section-anchor');
+  const tocItems = document.querySelectorAll('.toc-item');
+
+  function updateToc() {
+    let active = null;
+    sections.forEach(anchor => {
+      if (anchor.getBoundingClientRect().top <= 100) active = anchor.id;
+    });
+    tocItems.forEach(item => {
+      const href = item.querySelector('a').getAttribute('href').replace('#', '');
+      item.classList.toggle('active', href === active);
+    });
+  }
+
+  window.addEventListener('scroll', updateToc, { passive: true });
+  updateToc();
+</script>
+</body>
+</html>

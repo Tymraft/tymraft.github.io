@@ -1,0 +1,41 @@
+{% assign _status = include.status | default: 'draft' %}
+<div class="cover">
+  <div class="cover-eyebrow">Business Requirements Document</div>
+  <div class="cover-title">{{ include.title }}</div>
+  <div class="cover-subtitle">{{ include.subtitle }}</div>
+  <div class="cover-meta">
+    <div class="meta-item">
+      <div class="meta-label">Document ID</div>
+      <div class="meta-value mono">{{ include.id }}</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Status</div>
+      <div class="meta-value">
+        {% if _status == 'approved' %}
+          <span class="badge badge-approved">Approved</span>
+        {% elsif _status == 'review' %}
+          <span class="badge badge-review">In Review</span>
+        {% else %}
+          <span class="badge badge-draft">Draft</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Version</div>
+      <div class="meta-value mono">{{ include.version | default: '0.1' }}</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Author</div>
+      <div class="meta-value">{{ include.author }}</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Created</div>
+      <div class="meta-value">{{ include.created }}</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Last updated</div>
+      <div class="meta-value">{{ include.updated | default: include.created }}</div>
+    </div>
+    {% if include.extra_meta %}{{ include.extra_meta }}{% endif %}
+  </div>
+</div>
