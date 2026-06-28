@@ -18,7 +18,7 @@
       --text:      #111827;
       --muted:     #6B7A99;
       --accent:    #2563EB;
-      --accent-dim:#1D4ED8;
+      --accent-bg: #EBF2FF;
       --green:     #059669;
       --yellow:    #D97706;
       --red:       #DC2626;
@@ -34,7 +34,6 @@
       flex-direction: column;
     }
 
-    /* ── Header ── */
     header {
       display: flex;
       align-items: center;
@@ -49,34 +48,11 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     }
 
-    .logo {
-      font-weight: 600;
-      font-size: 15px;
-      letter-spacing: 0.04em;
-      color: var(--text);
-      text-transform: uppercase;
-    }
-
+    .logo { font-weight: 600; font-size: 15px; letter-spacing: 0.04em; color: var(--text); text-transform: uppercase; }
     .logo span { color: var(--accent); }
-
-    .header-sep {
-      width: 1px;
-      height: 20px;
-      background: var(--border);
-      margin: 0 4px;
-    }
-
-    .header-title {
-      font-size: 14px;
-      color: var(--muted);
-    }
-
-    .header-right {
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+    .header-sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+    .header-title { font-size: 14px; color: var(--muted); }
+    .header-right { margin-left: auto; }
 
     .search-box {
       display: flex;
@@ -88,27 +64,15 @@
       padding: 6px 12px;
       width: 220px;
     }
-
     .search-box input {
-      background: none;
-      border: none;
-      outline: none;
-      color: var(--text);
-      font-family: 'Inter', sans-serif;
-      font-size: 13px;
-      width: 100%;
+      background: none; border: none; outline: none;
+      color: var(--text); font-family: 'Inter', sans-serif; font-size: 13px; width: 100%;
     }
-
     .search-box input::placeholder { color: var(--muted); }
     .search-icon { color: var(--muted); flex-shrink: 0; }
 
-    /* ── Layout ── */
-    .layout {
-      display: flex;
-      flex: 1;
-    }
+    .layout { display: flex; flex: 1; }
 
-    /* ── Sidebar ── */
     aside {
       width: 220px;
       flex-shrink: 0;
@@ -117,228 +81,95 @@
       padding: 20px 0;
     }
 
-    .nav-section {
-      padding: 0 12px;
-      margin-bottom: 4px;
-    }
-
+    .nav-section { padding: 0 12px; margin-bottom: 4px; }
     .nav-label {
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
-      padding: 0 8px;
-      margin-bottom: 6px;
+      font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--muted); padding: 0 8px; margin-bottom: 6px;
     }
-
     .nav-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 7px 8px;
-      border-radius: 6px;
-      font-size: 13px;
-      color: var(--muted);
-      cursor: pointer;
-      transition: background 0.15s, color 0.15s;
-      user-select: none;
+      display: flex; align-items: center; gap: 8px; padding: 7px 8px;
+      border-radius: 6px; font-size: 13px; color: var(--muted);
+      cursor: pointer; transition: background 0.15s, color 0.15s; user-select: none;
     }
-
     .nav-item:hover { background: var(--surface2); color: var(--text); }
-    .nav-item.active { background: #EBF2FF; color: var(--accent); }
+    .nav-item.active { background: var(--accent-bg); color: var(--accent); }
     .nav-item svg { flex-shrink: 0; }
 
-    /* ── Main ── */
-    main {
-      flex: 1;
-      padding: 28px 32px;
-      overflow: auto;
-    }
+    main { flex: 1; padding: 28px 32px; overflow: auto; }
 
-    /* ── Breadcrumb ── */
     .breadcrumb {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 20px;
-      font-family: 'JetBrains Mono', monospace;
+      display: flex; align-items: center; gap: 4px;
+      font-size: 12px; color: var(--muted); margin-bottom: 20px;
+      font-family: 'JetBrains Mono', monospace; flex-wrap: wrap;
     }
+    .crumb { color: var(--accent); cursor: pointer; }
+    .crumb:hover { text-decoration: underline; }
+    .crumb.current { color: var(--muted); cursor: default; }
+    .crumb.current:hover { text-decoration: none; }
+    .sep { color: var(--border); margin: 0 2px; }
 
-    .breadcrumb a {
-      color: var(--accent);
-      text-decoration: none;
-    }
-
-    .breadcrumb a:hover { text-decoration: underline; }
-
-    /* ── Toolbar ── */
-    .toolbar {
-      display: flex;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-
-    .folder-title {
-      font-size: 20px;
-      font-weight: 600;
-      color: var(--text);
-    }
-
+    .toolbar { display: flex; align-items: center; margin-bottom: 16px; }
+    .folder-title { font-size: 20px; font-weight: 600; color: var(--text); }
     .file-count {
-      font-size: 12px;
-      color: var(--muted);
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 2px 10px;
-      margin-left: 10px;
+      font-size: 12px; color: var(--muted); background: var(--surface2);
+      border: 1px solid var(--border); border-radius: 20px;
+      padding: 2px 10px; margin-left: 10px;
     }
 
-    /* ── Table ── */
     .file-table {
-      width: 100%;
-      border-collapse: collapse;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      overflow: hidden;
-      background: var(--surface);
+      width: 100%; border-collapse: collapse;
+      border: 1px solid var(--border); border-radius: 10px;
+      overflow: hidden; background: var(--surface);
       box-shadow: 0 1px 4px rgba(0,0,0,0.05);
     }
-
-    .file-table thead tr {
-      background: var(--surface2);
-      border-bottom: 1px solid var(--border);
-    }
-
+    .file-table thead tr { background: var(--surface2); border-bottom: 1px solid var(--border); }
     .file-table th {
-      padding: 10px 16px;
-      text-align: left;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--muted);
-      cursor: pointer;
-      user-select: none;
-      white-space: nowrap;
+      padding: 10px 16px; text-align: left; font-size: 11px; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
+      cursor: pointer; user-select: none; white-space: nowrap;
     }
-
     .file-table th:hover { color: var(--text); }
-
-    .file-table th .sort-icon {
-      display: inline-block;
-      margin-left: 4px;
-      opacity: 0.4;
-      font-size: 10px;
-    }
-
+    .file-table th .sort-icon { display: inline-block; margin-left: 4px; opacity: 0.4; font-size: 10px; }
     .file-table th.sorted .sort-icon { opacity: 1; color: var(--accent); }
 
     .file-table tbody tr {
       border-bottom: 1px solid var(--border);
-      transition: background 0.12s;
-      cursor: pointer;
+      transition: background 0.12s; cursor: pointer;
     }
-
     .file-table tbody tr:last-child { border-bottom: none; }
     .file-table tbody tr:hover { background: var(--surface2); }
-
-    .file-table tbody tr:hover td:first-child {
-      border-left: 3px solid var(--accent);
-      padding-left: 13px;
-    }
-
+    .file-table tbody tr:hover td:first-child { border-left: 3px solid var(--accent); padding-left: 13px; }
     .file-table td {
-      padding: 12px 16px;
-      font-size: 13px;
-      color: var(--text);
-      border-left: 3px solid transparent;
-      transition: border-color 0.12s, padding 0.12s;
+      padding: 12px 16px; font-size: 13px; color: var(--text);
+      border-left: 3px solid transparent; transition: border-color 0.12s, padding 0.12s;
     }
 
-    /* ── File cell ── */
-    .file-cell {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
+    .file-cell { display: flex; align-items: center; gap: 10px; }
     .file-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
+      width: 32px; height: 32px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
+    .file-icon.folder { background: #FEF3C7; color: var(--yellow); }
+    .file-icon.md     { background: #DBEAFE; color: var(--accent); }
+    .file-icon.pdf    { background: #FEE2E2; color: var(--red); }
+    .file-icon.doc    { background: #EDE9FE; color: var(--purple); }
+    .file-icon.xls    { background: #D1FAE5; color: var(--green); }
+    .file-icon.misc   { background: var(--surface2); color: var(--muted); }
 
-    .file-icon.md   { background: #DBEAFE; color: var(--accent); }
-    .file-icon.pdf  { background: #FEE2E2; color: var(--red); }
-    .file-icon.doc  { background: #EDE9FE; color: var(--purple); }
-    .file-icon.xls  { background: #D1FAE5; color: var(--green); }
-    .file-icon.img  { background: #FEF3C7; color: var(--yellow); }
-    .file-icon.misc { background: var(--surface2); color: var(--muted); }
-
-    .file-name {
-      font-weight: 500;
-      font-size: 13px;
-      color: var(--text);
-    }
-
+    .file-name { font-weight: 500; font-size: 13px; color: var(--text); }
     tr:hover .file-name { color: var(--accent); }
 
-    .file-path {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 1px;
-    }
+    .meta-cell { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); }
+    .size-badge { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); }
 
-    /* ── Meta cells ── */
-    .meta-cell {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      color: var(--muted);
+    .state-msg {
+      text-align: center; padding: 60px 20px; color: var(--muted); font-size: 14px;
     }
+    .state-msg svg { opacity: 0.25; margin-bottom: 12px; display: block; margin-left: auto; margin-right: auto; }
 
-    .size-badge {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    /* ── Empty state ── */
-    .empty {
-      text-align: center;
-      padding: 60px 20px;
-      color: var(--muted);
-    }
-
-    .empty svg { opacity: 0.25; margin-bottom: 12px; }
-    .empty p { font-size: 14px; }
-
-    /* ── Stats bar ── */
-    .stats-bar {
-      display: flex;
-      gap: 24px;
-      padding: 14px 0;
-      margin-top: 16px;
-      border-top: 1px solid var(--border);
-    }
-
-    .stat {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .stat strong {
-      color: var(--text);
-      font-weight: 500;
-    }
+    .stats-bar { display: flex; gap: 24px; padding: 14px 0; margin-top: 16px; border-top: 1px solid var(--border); }
+    .stat { font-size: 12px; color: var(--muted); }
+    .stat strong { color: var(--text); font-weight: 500; }
   </style>
 </head>
 <body>
@@ -350,7 +181,7 @@
   <div class="header-right">
     <div class="search-box">
       <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" id="searchInput" placeholder="Search documents..." />
+      <input type="text" id="searchInput" placeholder="Search current folder..." />
     </div>
   </div>
 </header>
@@ -359,33 +190,22 @@
   <aside>
     <div class="nav-section">
       <div class="nav-label">Library</div>
-      <div class="nav-item active" onclick="filterType('all')" id="filter-all">
+      <div class="nav-item active" id="nav-home" onclick="navigateTo('docs')">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         All Documents
-      </div>
-    </div>
-    <div class="nav-section" style="margin-top:16px">
-      <div class="nav-label">Filter by type</div>
-      <div class="nav-item" onclick="filterType('md')" id="filter-md">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        Markdown
       </div>
     </div>
   </aside>
 
   <main>
-    <div class="breadcrumb">
-      <a href="https://tymraft.github.io">tymraft.github.io</a>
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-      <span>docs/</span>
-    </div>
+    <div class="breadcrumb" id="breadcrumb"></div>
 
     <div class="toolbar">
-      <div class="folder-title">docs</div>
-      <div class="file-count" id="fileCount">4 files</div>
+      <div class="folder-title" id="folderTitle">docs</div>
+      <div class="file-count" id="fileCount">—</div>
     </div>
 
-    <table class="file-table" id="fileTable">
+    <table class="file-table">
       <thead>
         <tr>
           <th onclick="sortBy('name')" id="th-name">Name <span class="sort-icon">↕</span></th>
@@ -397,83 +217,103 @@
     </table>
 
     <div class="stats-bar">
-      <div class="stat"><strong id="statFiles">4</strong> files</div>
-      <div class="stat"><strong id="statSize">—</strong> total</div>
+      <div class="stat"><strong id="statItems">—</strong> items</div>
       <div class="stat">Synced from <strong>github.com/Tymraft/tymraft.github.io</strong></div>
     </div>
   </main>
 </div>
 
 <script>
-  const FILES = [
-    {
-      name: 'project-brief.md',
-      ext: 'md',
-      modified: '2026-06-28',
-      size: 312,
-      path: 'docs/project-brief.md'
-    },
-    {
-      name: 'onboarding-guide.md',
-      ext: 'md',
-      modified: '2026-06-28',
-      size: 489,
-      path: 'docs/onboarding-guide.md'
-    },
-    {
-      name: 'meeting-notes-2026-06-28.md',
-      ext: 'md',
-      modified: '2026-06-28',
-      size: 541,
-      path: 'docs/meeting-notes-2026-06-28.md'
-    },
-    {
-      name: 'api-standards.md',
-      ext: 'md',
-      modified: '2026-06-28',
-      size: 398,
-      path: 'docs/guides/api-standards.md'
-    }
-  ];
+  const OWNER = 'Tymraft';
+  const REPO  = 'tymraft.github.io';
+  const ROOT  = 'docs';
+  const API   = `https://api.github.com/repos/${OWNER}/${REPO}/contents`;
 
+  let currentPath = ROOT;
+  let currentItems = [];
   let currentSort = { key: 'name', dir: 1 };
-  let currentFilter = 'all';
   let searchTerm = '';
 
-  function getIcon(ext) {
-    const icons = {
-      md:  { cls: 'md',  svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>' },
-      pdf: { cls: 'pdf', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
-      doc: { cls: 'doc', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
-    };
-    return icons[ext] || { cls: 'misc', svg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' };
+  const ICONS = {
+    folder: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
+    file:   `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
+  };
+
+  function iconCls(item) {
+    if (item.type === 'dir') return 'folder';
+    const ext = item.name.split('.').pop().toLowerCase();
+    return { md: 'md', pdf: 'pdf', doc: 'doc', docx: 'doc', xls: 'xls', xlsx: 'xls' }[ext] || 'misc';
   }
 
   function formatSize(bytes) {
+    if (!bytes) return '—';
     if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
   }
 
-  function formatDate(str) {
-    const d = new Date(str);
-    return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+  async function navigateTo(path) {
+    currentPath = path;
+    searchTerm = '';
+    document.getElementById('searchInput').value = '';
+    renderBreadcrumb();
+    setLoading();
+
+    try {
+      const res = await fetch(`${API}/${path}`);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      currentItems = data.map(item => ({
+        name: item.name,
+        type: item.type,
+        size: item.size || 0,
+        path: item.path,
+      }));
+      render();
+    } catch {
+      document.getElementById('fileBody').innerHTML = `
+        <tr><td colspan="3"><div class="state-msg">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <p>Could not load folder. Check your connection or try again.</p>
+        </div></td></tr>`;
+    }
   }
 
-  function totalSize(files) {
-    return files.reduce((a, f) => a + f.size, 0);
+  function setLoading() {
+    document.getElementById('fileBody').innerHTML = `<tr><td colspan="3"><div class="state-msg"><p>Loading...</p></div></td></tr>`;
+    document.getElementById('fileCount').textContent = '—';
+    document.getElementById('statItems').textContent = '—';
+  }
+
+  function renderBreadcrumb() {
+    const parts = currentPath.split('/');
+    const folderName = parts[parts.length - 1];
+    document.getElementById('folderTitle').textContent = folderName;
+
+    let html = `<span class="crumb" onclick="navigateTo('${ROOT}')">docs</span>`;
+    let built = ROOT;
+    for (let i = 1; i < parts.length; i++) {
+      built += '/' + parts[i];
+      const isCurrent = i === parts.length - 1;
+      const p = built;
+      html += `<span class="sep">›</span>`;
+      html += isCurrent
+        ? `<span class="crumb current">${parts[i]}</span>`
+        : `<span class="crumb" onclick="navigateTo('${p}')">${parts[i]}</span>`;
+    }
+    document.getElementById('breadcrumb').innerHTML = html;
   }
 
   function render() {
-    let files = FILES.filter(f => {
-      const matchType = currentFilter === 'all' || f.ext === currentFilter;
-      const matchSearch = f.name.toLowerCase().includes(searchTerm.toLowerCase())
-        || f.path.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchType && matchSearch;
-    });
+    let items = currentItems.filter(f =>
+      f.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
-    files.sort((a, b) => {
-      let av = a[currentSort.key], bv = b[currentSort.key];
+    items.sort((a, b) => {
+      // Folders always first
+      if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
+      let av = a[currentSort.key] ?? '';
+      let bv = b[currentSort.key] ?? '';
       if (typeof av === 'string') av = av.toLowerCase();
       if (typeof bv === 'string') bv = bv.toLowerCase();
       return av < bv ? -currentSort.dir : av > bv ? currentSort.dir : 0;
@@ -482,53 +322,47 @@
     const tbody = document.getElementById('fileBody');
     tbody.innerHTML = '';
 
-    if (files.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="3"><div class="empty"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><p>No documents found</p></div></td></tr>`;
+    if (items.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="3"><div class="state-msg">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <p>This folder is empty</p>
+      </div></td></tr>`;
     } else {
-      files.forEach(f => {
-        const icon = getIcon(f.ext);
-        const url = `https://tymraft.github.io/${f.path}`;
-        const isSubfolder = f.path.split('/').length > 2;
+      items.forEach(f => {
+        const isDir = f.type === 'dir';
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>
             <div class="file-cell">
-              <div class="file-icon ${icon.cls}">${icon.svg}</div>
-              <div>
-                <div class="file-name">${f.name}</div>
-                <div class="file-path">${isSubfolder ? f.path.replace('docs/', '') : ''}</div>
-              </div>
+              <div class="file-icon ${iconCls(f)}">${isDir ? ICONS.folder : ICONS.file}</div>
+              <div class="file-name">${f.name}</div>
             </div>
           </td>
-          <td class="meta-cell">${formatDate(f.modified)}</td>
-          <td><span class="size-badge">${formatSize(f.size)}</span></td>
+          <td class="meta-cell">—</td>
+          <td><span class="size-badge">${isDir ? '—' : formatSize(f.size)}</span></td>
         `;
-        tr.addEventListener('click', () => window.open(url, '_blank'));
+        tr.addEventListener('click', () => {
+          if (isDir) {
+            navigateTo(f.path);
+          } else {
+            window.open(`https://tymraft.github.io/${f.path}`, '_blank');
+          }
+        });
         tbody.appendChild(tr);
       });
     }
 
-    document.getElementById('fileCount').textContent = `${files.length} file${files.length !== 1 ? 's' : ''}`;
-    document.getElementById('statFiles').textContent = files.length;
-    document.getElementById('statSize').textContent = formatSize(totalSize(files));
+    const count = items.length;
+    document.getElementById('fileCount').textContent = `${count} item${count !== 1 ? 's' : ''}`;
+    document.getElementById('statItems').textContent = count;
   }
 
   function sortBy(key) {
-    if (currentSort.key === key) {
-      currentSort.dir *= -1;
-    } else {
-      currentSort = { key, dir: 1 };
-    }
+    currentSort = currentSort.key === key
+      ? { key, dir: currentSort.dir * -1 }
+      : { key, dir: 1 };
     document.querySelectorAll('.file-table th').forEach(th => th.classList.remove('sorted'));
-    document.getElementById(`th-${key}`).classList.add('sorted');
-    render();
-  }
-
-  function filterType(type) {
-    currentFilter = type;
-    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-    const el = document.getElementById(`filter-${type}`);
-    if (el) el.classList.add('active');
+    document.getElementById(`th-${key}`)?.classList.add('sorted');
     render();
   }
 
@@ -537,7 +371,7 @@
     render();
   });
 
-  render();
+  navigateTo(ROOT);
 </script>
 </body>
 </html>
