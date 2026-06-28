@@ -1,5 +1,6 @@
 ---
 name: create-interactive-document
+render_with_liquid: false
 description: >
   Trigger this skill whenever the user's prompt matches any of the following patterns:
 
