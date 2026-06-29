@@ -163,11 +163,11 @@
     .upload-filename { flex: 1; color: var(--text); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .upload-size { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); flex-shrink: 0; }
     .upload-status { font-size: 12px; flex-shrink: 0; min-width: 90px; text-align: right; }
-    .upload-status.pending  { color: var(--muted); }
+    .upload-status.pending   { color: var(--muted); }
     .upload-status.uploading { color: var(--accent); }
-    .upload-status.done    { color: var(--green); }
-    .upload-status.error   { color: var(--red); }
-    .upload-status.skipped { color: var(--yellow); }
+    .upload-status.done      { color: var(--green); }
+    .upload-status.error     { color: var(--red); }
+    .upload-status.skipped   { color: var(--yellow); }
 
     /* PAT modal */
     .modal-overlay {
@@ -252,14 +252,10 @@
     tr:hover .file-name { color: var(--accent); }
 
     .type-badge {
-      font-size: 10px;
-      font-weight: 600;
+      font-size: 10px; font-weight: 600;
       font-family: 'JetBrains Mono', monospace;
-      padding: 2px 7px;
-      border-radius: 4px;
-      white-space: nowrap;
-      letter-spacing: 0.03em;
-      flex-shrink: 0;
+      padding: 2px 7px; border-radius: 4px;
+      white-space: nowrap; letter-spacing: 0.03em; flex-shrink: 0;
     }
 
     .meta-cell { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); }
@@ -315,11 +311,17 @@
       <div class="folder-title" id="folderTitle">docs</div>
       <div class="file-count" id="fileCount">—</div>
       <div class="toolbar-right">
-        <button class="btn-upload" id="uploadBtn" onclick="handleUploadClick()">
+        <!--
+          The file input is the real trigger for the upload button.
+          Clicking the label opens the picker synchronously (valid user gesture).
+          JS intercepts the change event; if no PAT yet, it shows the modal
+          and holds the FileList until the token is confirmed.
+        -->
+        <label class="btn-upload" id="uploadBtn" for="fileInput">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           Upload
-        </button>
-        <input type="file" id="fileInput" multiple style="display:none" onchange="handleFilesSelected(this.files)" />
+        </label>
+        <input type="file" id="fileInput" multiple style="display:none" />
       </div>
     </div>
 
@@ -360,7 +362,7 @@
     <div class="modal-note">Generate one at github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens (scope: Contents: read &amp; write).</div>
     <div class="modal-error" id="patError"></div>
     <div class="modal-actions">
-      <button class="btn-secondary" onclick="closePatModal()">Cancel</button>
+      <button class="btn-secondary" onclick="cancelPat()">Cancel</button>
       <button class="btn-upload" id="patConfirmBtn" onclick="confirmPat()">Continue</button>
     </div>
   </div>
@@ -382,15 +384,26 @@
 
   // ── PAT (in-memory only) ────────────────────────────────────────────────────
   let sessionPat = null;
-  let pendingUploadFiles = null; // files waiting while PAT modal is open
 
-  function handleUploadClick() {
-    if (!sessionPat) {
-      showPatModal();
+  // Files selected before PAT was confirmed — held here until modal resolves
+  let pendingFiles = null;
+
+  // Wire up the file input's change event
+  document.getElementById('fileInput').addEventListener('change', function () {
+    if (!this.files || this.files.length === 0) return;
+
+    if (sessionPat) {
+      // Token already in memory — go straight to committing
+      runUpload(this.files);
     } else {
-      document.getElementById('fileInput').click();
+      // Hold the FileList and ask for the token first
+      pendingFiles = this.files;
+      showPatModal();
     }
-  }
+
+    // Reset so the same file can be picked again later
+    this.value = '';
+  });
 
   function showPatModal() {
     document.getElementById('patInput').value = '';
@@ -400,52 +413,46 @@
     setTimeout(() => document.getElementById('patInput').focus(), 50);
   }
 
-  function closePatModal() {
+  function cancelPat() {
     document.getElementById('patModal').classList.remove('visible');
-    pendingUploadFiles = null;
+    pendingFiles = null;
   }
 
   async function confirmPat() {
     const pat = document.getElementById('patInput').value.trim();
-    if (!pat) {
-      showPatError('Please enter a token.');
-      return;
-    }
+    if (!pat) { showPatError('Please enter a token.'); return; }
 
     const btn = document.getElementById('patConfirmBtn');
     btn.disabled = true;
     btn.textContent = 'Verifying…';
 
-    // Verify the token works against this repo
     try {
       const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}`, {
         headers: { Authorization: `Bearer ${pat}` }
       });
       if (res.status === 401 || res.status === 403) {
         showPatError('Token rejected — check it has repo write access.');
-        btn.disabled = false;
-        btn.innerHTML = 'Continue';
-        return;
+        btn.disabled = false; btn.textContent = 'Continue'; return;
       }
       if (!res.ok) {
         showPatError('Could not verify token. Try again.');
-        btn.disabled = false;
-        btn.innerHTML = 'Continue';
-        return;
+        btn.disabled = false; btn.textContent = 'Continue'; return;
       }
     } catch {
       showPatError('Network error while verifying token.');
-      btn.disabled = false;
-      btn.innerHTML = 'Continue';
-      return;
+      btn.disabled = false; btn.textContent = 'Continue'; return;
     }
 
     sessionPat = pat;
-    btn.disabled = false;
-    btn.innerHTML = 'Continue';
-    closePatModal();
-    // Trigger file picker now that we have a token
-    document.getElementById('fileInput').click();
+    btn.disabled = false; btn.textContent = 'Continue';
+    document.getElementById('patModal').classList.remove('visible');
+
+    // Now commit the files that were waiting
+    if (pendingFiles) {
+      const files = pendingFiles;
+      pendingFiles = null;
+      runUpload(files);
+    }
   }
 
   function showPatError(msg) {
@@ -458,12 +465,14 @@
     if (e.key === 'Enter') confirmPat();
   });
 
-  // ── File upload ─────────────────────────────────────────────────────────────
-  async function handleFilesSelected(files) {
-    if (!files || files.length === 0) return;
+  document.getElementById('patModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('patModal')) cancelPat();
+  });
 
-    // Reset the input so the same file can be re-uploaded if needed
-    document.getElementById('fileInput').value = '';
+  // ── Upload ──────────────────────────────────────────────────────────────────
+  async function runUpload(files) {
+    const fileArray = Array.from(files);
+    if (fileArray.length === 0) return;
 
     const panel = document.getElementById('uploadPanel');
     const list  = document.getElementById('uploadList');
@@ -471,43 +480,42 @@
     list.innerHTML = '';
     panel.classList.add('visible');
 
-    const btn = document.getElementById('uploadBtn');
-    btn.disabled = true;
+    const uploadBtn = document.getElementById('uploadBtn');
+    uploadBtn.style.pointerEvents = 'none';
+    uploadBtn.style.opacity = '0.55';
 
-    const fileArray = Array.from(files);
-
-    // Warn if any file is very large
     const MAX_BYTES = 50 * 1024 * 1024;
-    for (const f of fileArray) {
-      if (f.size > MAX_BYTES) {
-        alert(`"${f.name}" is over 50 MB. GitHub's API may reject it.`);
-      }
-    }
+    fileArray.forEach(f => {
+      if (f.size > MAX_BYTES) alert(`"${f.name}" is over 50 MB — GitHub's API may reject it.`);
+    });
 
-    // Build status rows
-    const rows = fileArray.map(f => {
+    // Render a status row for each file
+    fileArray.forEach(f => {
       const row = document.createElement('div');
       row.className = 'upload-row';
       row.innerHTML = `
-        <span class="upload-filename" title="${f.name}">${f.name}</span>
+        <span class="upload-filename" title="${escHtml(f.name)}">${escHtml(f.name)}</span>
         <span class="upload-size">${formatSize(f.size)}</span>
         <span class="upload-status pending" id="ustatus-${sanitiseId(f.name)}">Pending</span>
       `;
       list.appendChild(row);
-      return f;
     });
 
-    // Commit all files in parallel
     await Promise.allSettled(fileArray.map(f => commitFile(f)));
 
-    btn.disabled = false;
+    uploadBtn.style.pointerEvents = '';
+    uploadBtn.style.opacity = '';
 
-    // Refresh the folder listing
+    // Refresh folder listing
     await navigateTo(currentPath);
   }
 
   function sanitiseId(name) {
     return name.replace(/[^a-zA-Z0-9]/g, '_');
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
   function setUploadStatus(name, state, label) {
@@ -520,42 +528,37 @@
   async function fileToBase64(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => {
-        // result is "data:<mime>;base64,<data>" — strip prefix
-        const b64 = reader.result.split(',')[1];
-        resolve(b64);
-      };
-      reader.onerror = reject;
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = () => reject(new Error('FileReader failed'));
       reader.readAsDataURL(file);
     });
   }
 
   async function commitFile(file) {
     setUploadStatus(file.name, 'uploading', 'Uploading…');
-
     const destPath = `${currentPath}/${file.name}`;
 
     try {
       const b64 = await fileToBase64(file);
 
-      // Check if file already exists (need SHA to update)
+      // Check for existing file to get its SHA (required for updates)
       let existingSha = null;
       const checkRes = await fetch(`${API}/${destPath}`, {
         headers: { Authorization: `Bearer ${sessionPat}` }
       });
       if (checkRes.ok) {
         const existing = await checkRes.json();
-        existingSha = existing.sha;
+        existingSha = existing.sha || null;
       }
 
-      const body = {
+      const payload = {
         message: existingSha
           ? `docs: update ${file.name} via web upload`
           : `docs: add ${file.name} via web upload`,
         content: b64,
         branch: 'main',
       };
-      if (existingSha) body.sha = existingSha;
+      if (existingSha) payload.sha = existingSha;
 
       const putRes = await fetch(`${API}/${destPath}`, {
         method: 'PUT',
@@ -563,19 +566,21 @@
           Authorization: `Bearer ${sessionPat}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify(payload),
       });
 
       if (!putRes.ok) {
-        const err = await putRes.json().catch(() => ({}));
-        const msg = err.message || `HTTP ${putRes.status}`;
+        const errBody = await putRes.json().catch(() => ({}));
+        const msg = errBody.message || `HTTP ${putRes.status}`;
         setUploadStatus(file.name, 'error', `Error: ${msg}`);
+        console.error(`Upload failed for ${file.name}:`, putRes.status, errBody);
         return;
       }
 
       setUploadStatus(file.name, 'done', existingSha ? '✓ Updated' : '✓ Uploaded');
     } catch (err) {
       setUploadStatus(file.name, 'error', 'Error: ' + (err.message || 'unknown'));
+      console.error(`Upload exception for ${file.name}:`, err);
     }
   }
 
@@ -681,7 +686,7 @@
 
     try {
       const res = await fetch(`${API}/${path}`);
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error(`GitHub API ${res.status}`);
       const data = await res.json();
       currentItems = data.map(item => ({
         name: item.name,
@@ -700,7 +705,8 @@
 
       render();
       renderTypeFilters();
-    } catch {
+    } catch (err) {
+      console.error('navigateTo failed:', err);
       document.getElementById('fileBody').innerHTML = `
         <tr><td colspan="3"><div class="state-msg">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -799,7 +805,7 @@
             <div class="file-cell">
               <div class="file-icon ${iconCls(f)}">${isDir ? ICONS.folder : ICONS.file}</div>
               <div class="file-name-wrap">
-                <span class="file-name">${f.name}</span>
+                <span class="file-name">${escHtml(f.name)}</span>
                 ${badge}
               </div>
             </div>
@@ -832,11 +838,6 @@
   document.getElementById('searchInput').addEventListener('input', e => {
     searchTerm = e.target.value;
     render();
-  });
-
-  // Close PAT modal on overlay click
-  document.getElementById('patModal').addEventListener('click', e => {
-    if (e.target === document.getElementById('patModal')) closePatModal();
   });
 
   navigateTo(ROOT);
