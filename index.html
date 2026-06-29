@@ -669,8 +669,13 @@
   }
 
   function fileUrl(path) {
-    const withoutExt = path.replace(/\.[^/.]+$/, '');
-    return `${BASE}/${withoutExt}`;
+    const ext = path.split('.').pop().toLowerCase();
+    if (ext === 'md') {
+      // Strip the .md extension — Jekyll serves these as clean URLs
+      return `${BASE}/${path.replace(/\.md$/, '')}`;
+    }
+    // All other file types: keep the extension as-is
+    return `${BASE}/${path}`;
   }
 
   function parseFrontMatter(text) {
