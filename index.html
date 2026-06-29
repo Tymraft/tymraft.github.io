@@ -115,6 +115,97 @@
       border: 1px solid var(--border); border-radius: 20px;
       padding: 2px 10px; margin-left: 10px;
     }
+    .toolbar-right { margin-left: auto; }
+
+    /* Upload button */
+    .btn-upload {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--accent); color: #fff;
+      border: none; border-radius: 6px;
+      padding: 7px 14px; font-size: 13px; font-weight: 500;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer; transition: background 0.15s, opacity 0.15s;
+      white-space: nowrap;
+    }
+    .btn-upload:hover { background: #1d4ed8; }
+    .btn-upload:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    /* Upload status panel */
+    .upload-panel {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .upload-panel.visible { display: block; }
+    .upload-panel-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      font-size: 12px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .upload-panel-close {
+      cursor: pointer; color: var(--muted); font-size: 16px; line-height: 1;
+      background: none; border: none; padding: 0;
+    }
+    .upload-panel-close:hover { color: var(--text); }
+    .upload-list { padding: 8px 0; }
+    .upload-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 14px; font-size: 13px;
+    }
+    .upload-row + .upload-row { border-top: 1px solid var(--border); }
+    .upload-filename { flex: 1; color: var(--text); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .upload-size { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); flex-shrink: 0; }
+    .upload-status { font-size: 12px; flex-shrink: 0; min-width: 90px; text-align: right; }
+    .upload-status.pending  { color: var(--muted); }
+    .upload-status.uploading { color: var(--accent); }
+    .upload-status.done    { color: var(--green); }
+    .upload-status.error   { color: var(--red); }
+    .upload-status.skipped { color: var(--yellow); }
+
+    /* PAT modal */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4); z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.visible { display: flex; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 28px;
+      width: 420px;
+      max-width: calc(100vw - 40px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    }
+    .modal h2 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+    .modal p { font-size: 13px; color: var(--muted); margin-bottom: 18px; line-height: 1.6; }
+    .modal label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .modal input[type="password"] {
+      width: 100%; padding: 9px 12px;
+      border: 1px solid var(--border); border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace; font-size: 13px;
+      color: var(--text); background: var(--bg);
+      outline: none; margin-bottom: 8px;
+    }
+    .modal input[type="password"]:focus { border-color: var(--accent); }
+    .modal-note { font-size: 11px; color: var(--muted); margin-bottom: 20px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+    .btn-secondary {
+      background: var(--surface2); color: var(--text);
+      border: 1px solid var(--border); border-radius: 6px;
+      padding: 7px 14px; font-size: 13px; font-weight: 500;
+      font-family: 'Inter', sans-serif; cursor: pointer;
+    }
+    .btn-secondary:hover { background: var(--border); }
+    .modal-error { font-size: 12px; color: var(--red); margin-bottom: 12px; display: none; }
 
     .file-table {
       width: 100%; border-collapse: collapse;
@@ -160,7 +251,6 @@
     .file-name { font-weight: 500; font-size: 13px; color: var(--text); }
     tr:hover .file-name { color: var(--accent); }
 
-    /* Type badges */
     .type-badge {
       font-size: 10px;
       font-weight: 600;
@@ -224,6 +314,22 @@
     <div class="toolbar">
       <div class="folder-title" id="folderTitle">docs</div>
       <div class="file-count" id="fileCount">—</div>
+      <div class="toolbar-right">
+        <button class="btn-upload" id="uploadBtn" onclick="handleUploadClick()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload
+        </button>
+        <input type="file" id="fileInput" multiple style="display:none" onchange="handleFilesSelected(this.files)" />
+      </div>
+    </div>
+
+    <!-- Upload progress panel -->
+    <div class="upload-panel" id="uploadPanel">
+      <div class="upload-panel-header">
+        <span>Uploading to <span id="uploadTarget"></span></span>
+        <button class="upload-panel-close" onclick="closeUploadPanel()">✕</button>
+      </div>
+      <div class="upload-list" id="uploadList"></div>
     </div>
 
     <table class="file-table">
@@ -244,6 +350,22 @@
   </main>
 </div>
 
+<!-- PAT modal -->
+<div class="modal-overlay" id="patModal">
+  <div class="modal">
+    <h2>GitHub access token</h2>
+    <p>To upload files, enter a GitHub Personal Access Token with <strong>repo</strong> write access. It's stored in memory only and cleared when you close this tab.</p>
+    <label for="patInput">Personal Access Token</label>
+    <input type="password" id="patInput" placeholder="ghp_..." autocomplete="off" />
+    <div class="modal-note">Generate one at github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens (scope: Contents: read &amp; write).</div>
+    <div class="modal-error" id="patError"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closePatModal()">Cancel</button>
+      <button class="btn-upload" id="patConfirmBtn" onclick="confirmPat()">Continue</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const OWNER = 'Tymraft';
   const REPO  = 'tymraft.github.io';
@@ -258,7 +380,211 @@
   let searchTerm = '';
   let activeType = null;
 
-  // Badge colour palette — deterministic by type name
+  // ── PAT (in-memory only) ────────────────────────────────────────────────────
+  let sessionPat = null;
+  let pendingUploadFiles = null; // files waiting while PAT modal is open
+
+  function handleUploadClick() {
+    if (!sessionPat) {
+      showPatModal();
+    } else {
+      document.getElementById('fileInput').click();
+    }
+  }
+
+  function showPatModal() {
+    document.getElementById('patInput').value = '';
+    document.getElementById('patError').style.display = 'none';
+    document.getElementById('patError').textContent = '';
+    document.getElementById('patModal').classList.add('visible');
+    setTimeout(() => document.getElementById('patInput').focus(), 50);
+  }
+
+  function closePatModal() {
+    document.getElementById('patModal').classList.remove('visible');
+    pendingUploadFiles = null;
+  }
+
+  async function confirmPat() {
+    const pat = document.getElementById('patInput').value.trim();
+    if (!pat) {
+      showPatError('Please enter a token.');
+      return;
+    }
+
+    const btn = document.getElementById('patConfirmBtn');
+    btn.disabled = true;
+    btn.textContent = 'Verifying…';
+
+    // Verify the token works against this repo
+    try {
+      const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}`, {
+        headers: { Authorization: `Bearer ${pat}` }
+      });
+      if (res.status === 401 || res.status === 403) {
+        showPatError('Token rejected — check it has repo write access.');
+        btn.disabled = false;
+        btn.innerHTML = 'Continue';
+        return;
+      }
+      if (!res.ok) {
+        showPatError('Could not verify token. Try again.');
+        btn.disabled = false;
+        btn.innerHTML = 'Continue';
+        return;
+      }
+    } catch {
+      showPatError('Network error while verifying token.');
+      btn.disabled = false;
+      btn.innerHTML = 'Continue';
+      return;
+    }
+
+    sessionPat = pat;
+    btn.disabled = false;
+    btn.innerHTML = 'Continue';
+    closePatModal();
+    // Trigger file picker now that we have a token
+    document.getElementById('fileInput').click();
+  }
+
+  function showPatError(msg) {
+    const el = document.getElementById('patError');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  document.getElementById('patInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') confirmPat();
+  });
+
+  // ── File upload ─────────────────────────────────────────────────────────────
+  async function handleFilesSelected(files) {
+    if (!files || files.length === 0) return;
+
+    // Reset the input so the same file can be re-uploaded if needed
+    document.getElementById('fileInput').value = '';
+
+    const panel = document.getElementById('uploadPanel');
+    const list  = document.getElementById('uploadList');
+    document.getElementById('uploadTarget').textContent = currentPath + '/';
+    list.innerHTML = '';
+    panel.classList.add('visible');
+
+    const btn = document.getElementById('uploadBtn');
+    btn.disabled = true;
+
+    const fileArray = Array.from(files);
+
+    // Warn if any file is very large
+    const MAX_BYTES = 50 * 1024 * 1024;
+    for (const f of fileArray) {
+      if (f.size > MAX_BYTES) {
+        alert(`"${f.name}" is over 50 MB. GitHub's API may reject it.`);
+      }
+    }
+
+    // Build status rows
+    const rows = fileArray.map(f => {
+      const row = document.createElement('div');
+      row.className = 'upload-row';
+      row.innerHTML = `
+        <span class="upload-filename" title="${f.name}">${f.name}</span>
+        <span class="upload-size">${formatSize(f.size)}</span>
+        <span class="upload-status pending" id="ustatus-${sanitiseId(f.name)}">Pending</span>
+      `;
+      list.appendChild(row);
+      return f;
+    });
+
+    // Commit all files in parallel
+    await Promise.allSettled(fileArray.map(f => commitFile(f)));
+
+    btn.disabled = false;
+
+    // Refresh the folder listing
+    await navigateTo(currentPath);
+  }
+
+  function sanitiseId(name) {
+    return name.replace(/[^a-zA-Z0-9]/g, '_');
+  }
+
+  function setUploadStatus(name, state, label) {
+    const el = document.getElementById(`ustatus-${sanitiseId(name)}`);
+    if (!el) return;
+    el.className = `upload-status ${state}`;
+    el.textContent = label;
+  }
+
+  async function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        // result is "data:<mime>;base64,<data>" — strip prefix
+        const b64 = reader.result.split(',')[1];
+        resolve(b64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function commitFile(file) {
+    setUploadStatus(file.name, 'uploading', 'Uploading…');
+
+    const destPath = `${currentPath}/${file.name}`;
+
+    try {
+      const b64 = await fileToBase64(file);
+
+      // Check if file already exists (need SHA to update)
+      let existingSha = null;
+      const checkRes = await fetch(`${API}/${destPath}`, {
+        headers: { Authorization: `Bearer ${sessionPat}` }
+      });
+      if (checkRes.ok) {
+        const existing = await checkRes.json();
+        existingSha = existing.sha;
+      }
+
+      const body = {
+        message: existingSha
+          ? `docs: update ${file.name} via web upload`
+          : `docs: add ${file.name} via web upload`,
+        content: b64,
+        branch: 'main',
+      };
+      if (existingSha) body.sha = existingSha;
+
+      const putRes = await fetch(`${API}/${destPath}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${sessionPat}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!putRes.ok) {
+        const err = await putRes.json().catch(() => ({}));
+        const msg = err.message || `HTTP ${putRes.status}`;
+        setUploadStatus(file.name, 'error', `Error: ${msg}`);
+        return;
+      }
+
+      setUploadStatus(file.name, 'done', existingSha ? '✓ Updated' : '✓ Uploaded');
+    } catch (err) {
+      setUploadStatus(file.name, 'error', 'Error: ' + (err.message || 'unknown'));
+    }
+  }
+
+  function closeUploadPanel() {
+    document.getElementById('uploadPanel').classList.remove('visible');
+    document.getElementById('uploadList').innerHTML = '';
+  }
+
+  // ── Browse / navigate ───────────────────────────────────────────────────────
   const TYPE_COLOURS = {
     'BRD':           { bg: '#EDE9FE', color: '#7C3AED' },
     'Guide':         { bg: '#D1FAE5', color: '#059669' },
@@ -271,7 +597,6 @@
     'Report':        { bg: '#FFF7ED', color: '#EA580C' },
   };
 
-  // Fallback colour for unknown types — hash the string to pick one
   const FALLBACK_COLOURS = [
     { bg: '#F1F5F9', color: '#475569' },
     { bg: '#F0FDFA', color: '#0F766E' },
@@ -282,7 +607,6 @@
   function typeColour(type) {
     if (!type) return null;
     if (TYPE_COLOURS[type]) return TYPE_COLOURS[type];
-    // Hash to fallback
     let h = 0;
     for (let i = 0; i < type.length; i++) h = (h * 31 + type.charCodeAt(i)) & 0xffff;
     return FALLBACK_COLOURS[h % FALLBACK_COLOURS.length];
@@ -332,7 +656,6 @@
     try {
       const res = await fetch(`${RAW}/${path}`);
       if (!res.ok) return {};
-      // Only read the first 500 chars — front matter is always at the top
       const reader = res.body.getReader();
       let text = '';
       while (text.length < 500) {
@@ -352,6 +675,7 @@
     searchTerm = '';
     activeType = null;
     document.getElementById('searchInput').value = '';
+    closeUploadPanel();
     renderBreadcrumb();
     setLoading();
 
@@ -364,12 +688,11 @@
         type: item.type,
         size: item.size || 0,
         path: item.path,
-        meta: null, // loaded async
+        meta: null,
       }));
 
       render();
 
-      // Fetch front matter for all files in parallel
       const files = currentItems.filter(f => f.type === 'file');
       await Promise.all(files.map(async f => {
         f.meta = await fetchFrontMatter(f.path);
@@ -509,6 +832,11 @@
   document.getElementById('searchInput').addEventListener('input', e => {
     searchTerm = e.target.value;
     render();
+  });
+
+  // Close PAT modal on overlay click
+  document.getElementById('patModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('patModal')) closePatModal();
   });
 
   navigateTo(ROOT);
