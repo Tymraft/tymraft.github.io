@@ -477,6 +477,8 @@
       return;
     }
 
+    // Copy to plain array BEFORE resetting the input — resetting invalidates the FileList
+    const fileArray = Array.from(files);
     document.getElementById('fileInput').value = '';
 
     const panel = document.getElementById('uploadPanel');
@@ -488,7 +490,6 @@
     const btn = document.getElementById('uploadBtn');
     btn.disabled = true;
 
-    const fileArray = Array.from(files);
     console.log('[upload] files to commit:', fileArray.map(f => `${f.name} (${f.size}B)`));
 
     const MAX_BYTES = 50 * 1024 * 1024;
