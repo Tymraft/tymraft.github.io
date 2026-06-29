@@ -1,0 +1,52 @@
+- Chart
+	- Instrument symbols should be clear that more information can be found on it elsewhere
+
+- StrategyConfig
+	- is_trading_time
+		- should not default to current utc time. Should either throw error or get current time from strategy
+
+- decorators
+	- on_tick
+		- mismatch between on_bar and on_tick. on_tick does not require the symbol, whereas on_bar does
+
+- number
+	- price, pip and other conversions may not work for prices that don't have 5 decimal places. Map need dynamic functionality with symbol mappings
+	- Range
+		- This class is kind of redundant
+		- Could me useful for money management
+		- to_pips, to_price_distance - are these necessary
+
+- Order
+	- There are parameters which might not be necessary
+	- Not sure if modify has a way to remove tp/sl, rather than keep it unchanged
+
+- Position
+	- Not sure if modify has a way to remove tp/sl, rather than keep it unchanged
+
+
+- OrderDirection
+	- Change to LONG/SHORT instead of BUY/SELL
+
+
+- Strategy
+	- IG defaults
+		- provider: Trading provider ("IG", "PAPER")
+		- data_provider: Data source for paper trading live data (default: "IG")
+		- historical_provider: Historical data provider name (default: "ig_markets")
+			- IG being the default probably is not a good idea here.
+
+- Tick
+	- tick has ask/bid and no mid (might just be how ticks work though)
+	- tick has spread but bar doesn't (think about if it makes sense for bar to have it)
+
+- types
+	- This should be separated into multiple files inside a folder with an __init__.py to maintain pre-existing functionality
+
+- indicators
+	- Validation checks should be done for situations where a chart isn't subscribed to a particular time interval, but an indicator is attached at that time interval (or handler etc.)
+		- Also check for indicator being attached more than once (should not be allowed)
+		- Also check for indicator being attached after init stage (same should apply for Chart initialisation and anything else that needs to be pre-prepared)
+
+- State
+	- manifest needs to save registered indicators to the manifest so that can be automatically opened in the FE
+	- initial state needs to be saved to manifest
