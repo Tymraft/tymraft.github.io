@@ -163,11 +163,11 @@
     .upload-filename { flex: 1; color: var(--text); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .upload-size { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); flex-shrink: 0; }
     .upload-status { font-size: 12px; flex-shrink: 0; min-width: 90px; text-align: right; }
-    .upload-status.pending   { color: var(--muted); }
+    .upload-status.pending  { color: var(--muted); }
     .upload-status.uploading { color: var(--accent); }
-    .upload-status.done      { color: var(--green); }
-    .upload-status.error     { color: var(--red); }
-    .upload-status.skipped   { color: var(--yellow); }
+    .upload-status.done    { color: var(--green); }
+    .upload-status.error   { color: var(--red); }
+    .upload-status.skipped { color: var(--yellow); }
 
     /* PAT modal */
     .modal-overlay {
@@ -251,11 +251,16 @@
     .file-name { font-weight: 500; font-size: 13px; color: var(--text); }
     tr:hover .file-name { color: var(--accent); }
 
+    /* Type badges */
     .type-badge {
-      font-size: 10px; font-weight: 600;
+      font-size: 10px;
+      font-weight: 600;
       font-family: 'JetBrains Mono', monospace;
-      padding: 2px 7px; border-radius: 4px;
-      white-space: nowrap; letter-spacing: 0.03em; flex-shrink: 0;
+      padding: 2px 7px;
+      border-radius: 4px;
+      white-space: nowrap;
+      letter-spacing: 0.03em;
+      flex-shrink: 0;
     }
 
     .meta-cell { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); }
@@ -311,17 +316,11 @@
       <div class="folder-title" id="folderTitle">docs</div>
       <div class="file-count" id="fileCount">—</div>
       <div class="toolbar-right">
-        <!--
-          The file input is the real trigger for the upload button.
-          Clicking the label opens the picker synchronously (valid user gesture).
-          JS intercepts the change event; if no PAT yet, it shows the modal
-          and holds the FileList until the token is confirmed.
-        -->
-        <label class="btn-upload" id="uploadBtn" for="fileInput">
+        <button class="btn-upload" id="uploadBtn" onclick="handleUploadClick()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           Upload
-        </label>
-        <input type="file" id="fileInput" multiple style="display:none" />
+        </button>
+        <input type="file" id="fileInput" multiple style="display:none" onchange="handleFilesSelected(this.files)" />
       </div>
     </div>
 
@@ -362,7 +361,7 @@
     <div class="modal-note">Generate one at github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens (scope: Contents: read &amp; write).</div>
     <div class="modal-error" id="patError"></div>
     <div class="modal-actions">
-      <button class="btn-secondary" onclick="cancelPat()">Cancel</button>
+      <button class="btn-secondary" onclick="closePatModal()">Cancel</button>
       <button class="btn-upload" id="patConfirmBtn" onclick="confirmPat()">Continue</button>
     </div>
   </div>
@@ -384,28 +383,20 @@
 
   // ── PAT (in-memory only) ────────────────────────────────────────────────────
   let sessionPat = null;
+  let pendingUploadFiles = null;
 
-  // Files selected before PAT was confirmed — held here until modal resolves
-  let pendingFiles = null;
-
-  // Wire up the file input's change event
-  document.getElementById('fileInput').addEventListener('change', function () {
-    if (!this.files || this.files.length === 0) return;
-
-    if (sessionPat) {
-      // Token already in memory — go straight to committing
-      runUpload(this.files);
-    } else {
-      // Hold the FileList and ask for the token first
-      pendingFiles = this.files;
+  function handleUploadClick() {
+    console.log('[upload] handleUploadClick — sessionPat set:', !!sessionPat);
+    if (!sessionPat) {
       showPatModal();
+    } else {
+      console.log('[upload] PAT already set, opening file picker');
+      document.getElementById('fileInput').click();
     }
-
-    // Reset so the same file can be picked again later
-    this.value = '';
-  });
+  }
 
   function showPatModal() {
+    console.log('[upload] showPatModal');
     document.getElementById('patInput').value = '';
     document.getElementById('patError').style.display = 'none';
     document.getElementById('patError').textContent = '';
@@ -413,49 +404,62 @@
     setTimeout(() => document.getElementById('patInput').focus(), 50);
   }
 
-  function cancelPat() {
+  function closePatModal() {
+    console.log('[upload] closePatModal — discarding pendingUploadFiles');
     document.getElementById('patModal').classList.remove('visible');
-    pendingFiles = null;
+    pendingUploadFiles = null;
   }
 
   async function confirmPat() {
     const pat = document.getElementById('patInput').value.trim();
-    if (!pat) { showPatError('Please enter a token.'); return; }
+    console.log('[upload] confirmPat — token length:', pat.length);
+
+    if (!pat) {
+      showPatError('Please enter a token.');
+      return;
+    }
 
     const btn = document.getElementById('patConfirmBtn');
     btn.disabled = true;
     btn.textContent = 'Verifying…';
 
+    console.log('[upload] verifying token against repo API…');
     try {
       const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}`, {
         headers: { Authorization: `Bearer ${pat}` }
       });
+      console.log('[upload] token verify response status:', res.status);
       if (res.status === 401 || res.status === 403) {
         showPatError('Token rejected — check it has repo write access.');
-        btn.disabled = false; btn.textContent = 'Continue'; return;
+        btn.disabled = false;
+        btn.textContent = 'Continue';
+        return;
       }
       if (!res.ok) {
         showPatError('Could not verify token. Try again.');
-        btn.disabled = false; btn.textContent = 'Continue'; return;
+        btn.disabled = false;
+        btn.textContent = 'Continue';
+        return;
       }
-    } catch {
+    } catch (err) {
+      console.error('[upload] token verify network error:', err);
       showPatError('Network error while verifying token.');
-      btn.disabled = false; btn.textContent = 'Continue'; return;
+      btn.disabled = false;
+      btn.textContent = 'Continue';
+      return;
     }
 
+    console.log('[upload] token verified OK — storing sessionPat');
     sessionPat = pat;
-    btn.disabled = false; btn.textContent = 'Continue';
-    document.getElementById('patModal').classList.remove('visible');
-
-    // Now commit the files that were waiting
-    if (pendingFiles) {
-      const files = pendingFiles;
-      pendingFiles = null;
-      runUpload(files);
-    }
+    btn.disabled = false;
+    btn.textContent = 'Continue';
+    closePatModal();
+    console.log('[upload] triggering fileInput.click() after PAT confirmed');
+    document.getElementById('fileInput').click();
   }
 
   function showPatError(msg) {
+    console.warn('[upload] PAT error shown:', msg);
     const el = document.getElementById('patError');
     el.textContent = msg;
     el.style.display = 'block';
@@ -465,14 +469,15 @@
     if (e.key === 'Enter') confirmPat();
   });
 
-  document.getElementById('patModal').addEventListener('click', e => {
-    if (e.target === document.getElementById('patModal')) cancelPat();
-  });
+  // ── File upload ─────────────────────────────────────────────────────────────
+  async function handleFilesSelected(files) {
+    console.log('[upload] handleFilesSelected — files:', files ? files.length : 'null');
+    if (!files || files.length === 0) {
+      console.log('[upload] no files selected, returning early');
+      return;
+    }
 
-  // ── Upload ──────────────────────────────────────────────────────────────────
-  async function runUpload(files) {
-    const fileArray = Array.from(files);
-    if (fileArray.length === 0) return;
+    document.getElementById('fileInput').value = '';
 
     const panel = document.getElementById('uploadPanel');
     const list  = document.getElementById('uploadList');
@@ -480,33 +485,36 @@
     list.innerHTML = '';
     panel.classList.add('visible');
 
-    const uploadBtn = document.getElementById('uploadBtn');
-    uploadBtn.style.pointerEvents = 'none';
-    uploadBtn.style.opacity = '0.55';
+    const btn = document.getElementById('uploadBtn');
+    btn.disabled = true;
+
+    const fileArray = Array.from(files);
+    console.log('[upload] files to commit:', fileArray.map(f => `${f.name} (${f.size}B)`));
 
     const MAX_BYTES = 50 * 1024 * 1024;
-    fileArray.forEach(f => {
-      if (f.size > MAX_BYTES) alert(`"${f.name}" is over 50 MB — GitHub's API may reject it.`);
-    });
+    for (const f of fileArray) {
+      if (f.size > MAX_BYTES) {
+        alert(`"${f.name}" is over 50 MB. GitHub's API may reject it.`);
+      }
+    }
 
-    // Render a status row for each file
     fileArray.forEach(f => {
       const row = document.createElement('div');
       row.className = 'upload-row';
       row.innerHTML = `
-        <span class="upload-filename" title="${escHtml(f.name)}">${escHtml(f.name)}</span>
+        <span class="upload-filename" title="${f.name}">${f.name}</span>
         <span class="upload-size">${formatSize(f.size)}</span>
         <span class="upload-status pending" id="ustatus-${sanitiseId(f.name)}">Pending</span>
       `;
       list.appendChild(row);
     });
 
-    await Promise.allSettled(fileArray.map(f => commitFile(f)));
+    console.log('[upload] starting parallel commits…');
+    const results = await Promise.allSettled(fileArray.map(f => commitFile(f)));
+    console.log('[upload] all commits settled:', results.map(r => r.status));
 
-    uploadBtn.style.pointerEvents = '';
-    uploadBtn.style.opacity = '';
-
-    // Refresh folder listing
+    btn.disabled = false;
+    console.log('[upload] refreshing folder listing at:', currentPath);
     await navigateTo(currentPath);
   }
 
@@ -514,41 +522,55 @@
     return name.replace(/[^a-zA-Z0-9]/g, '_');
   }
 
-  function escHtml(str) {
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
   function setUploadStatus(name, state, label) {
     const el = document.getElementById(`ustatus-${sanitiseId(name)}`);
-    if (!el) return;
+    if (!el) {
+      console.warn('[upload] setUploadStatus: element not found for', name);
+      return;
+    }
     el.className = `upload-status ${state}`;
     el.textContent = label;
   }
 
   async function fileToBase64(file) {
+    console.log('[upload] fileToBase64 start:', file.name);
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = () => reject(new Error('FileReader failed'));
+      reader.onload = () => {
+        const b64 = reader.result.split(',')[1];
+        console.log('[upload] fileToBase64 done:', file.name, '— b64 length:', b64.length);
+        resolve(b64);
+      };
+      reader.onerror = (e) => {
+        console.error('[upload] FileReader error for', file.name, e);
+        reject(new Error('FileReader failed'));
+      };
       reader.readAsDataURL(file);
     });
   }
 
   async function commitFile(file) {
+    console.log('[upload] commitFile start:', file.name);
     setUploadStatus(file.name, 'uploading', 'Uploading…');
     const destPath = `${currentPath}/${file.name}`;
+    console.log('[upload] dest path:', destPath);
 
     try {
       const b64 = await fileToBase64(file);
 
-      // Check for existing file to get its SHA (required for updates)
+      // Check if file already exists to get SHA
+      console.log('[upload] checking for existing file at:', `${API}/${destPath}`);
       let existingSha = null;
       const checkRes = await fetch(`${API}/${destPath}`, {
         headers: { Authorization: `Bearer ${sessionPat}` }
       });
+      console.log('[upload] existence check status:', checkRes.status);
       if (checkRes.ok) {
         const existing = await checkRes.json();
         existingSha = existing.sha || null;
+        console.log('[upload] file exists, SHA:', existingSha);
+      } else {
+        console.log('[upload] file does not exist (will create new)');
       }
 
       const payload = {
@@ -560,6 +582,9 @@
       };
       if (existingSha) payload.sha = existingSha;
 
+      console.log('[upload] PUT payload keys:', Object.keys(payload), '— content length:', b64.length);
+      console.log('[upload] PUT URL:', `${API}/${destPath}`);
+
       const putRes = await fetch(`${API}/${destPath}`, {
         method: 'PUT',
         headers: {
@@ -569,18 +594,23 @@
         body: JSON.stringify(payload),
       });
 
+      console.log('[upload] PUT response status:', putRes.status, putRes.statusText);
+
       if (!putRes.ok) {
         const errBody = await putRes.json().catch(() => ({}));
+        console.error('[upload] PUT failed for', file.name, '— status:', putRes.status, '— body:', errBody);
         const msg = errBody.message || `HTTP ${putRes.status}`;
         setUploadStatus(file.name, 'error', `Error: ${msg}`);
-        console.error(`Upload failed for ${file.name}:`, putRes.status, errBody);
         return;
       }
 
+      const successBody = await putRes.json().catch(() => ({}));
+      console.log('[upload] PUT success for', file.name, '— commit SHA:', successBody?.commit?.sha);
       setUploadStatus(file.name, 'done', existingSha ? '✓ Updated' : '✓ Uploaded');
+
     } catch (err) {
+      console.error('[upload] exception during commitFile for', file.name, ':', err);
       setUploadStatus(file.name, 'error', 'Error: ' + (err.message || 'unknown'));
-      console.error(`Upload exception for ${file.name}:`, err);
     }
   }
 
@@ -686,7 +716,7 @@
 
     try {
       const res = await fetch(`${API}/${path}`);
-      if (!res.ok) throw new Error(`GitHub API ${res.status}`);
+      if (!res.ok) throw new Error();
       const data = await res.json();
       currentItems = data.map(item => ({
         name: item.name,
@@ -705,8 +735,7 @@
 
       render();
       renderTypeFilters();
-    } catch (err) {
-      console.error('navigateTo failed:', err);
+    } catch {
       document.getElementById('fileBody').innerHTML = `
         <tr><td colspan="3"><div class="state-msg">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -805,7 +834,7 @@
             <div class="file-cell">
               <div class="file-icon ${iconCls(f)}">${isDir ? ICONS.folder : ICONS.file}</div>
               <div class="file-name-wrap">
-                <span class="file-name">${escHtml(f.name)}</span>
+                <span class="file-name">${f.name}</span>
                 ${badge}
               </div>
             </div>
@@ -838,6 +867,11 @@
   document.getElementById('searchInput').addEventListener('input', e => {
     searchTerm = e.target.value;
     render();
+  });
+
+  // Close PAT modal on overlay click
+  document.getElementById('patModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('patModal')) closePatModal();
   });
 
   navigateTo(ROOT);
